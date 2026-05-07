@@ -5,12 +5,12 @@ const express = require('express')
 const cors = require('cors')
 
 const Mensaje = require('./models/Mensaje')
+const mensajesRouter = require('./controllers/mensajes')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 //---
-
 
 
 
@@ -22,39 +22,8 @@ app.get('/algo', (req, res) => {
 })
 
 
-
-
-// GET
-app.get('/api/mensajes', async (req, res) => {
-  const mensajes = await Mensaje.find({})
-  res.json(mensajes)
-})
-
-
-
-
-// POST
-app.post('/api/mensajes', async (req, res) => {
-  const {
-    mensaje,
-    usuarioId,
-    salaId,
-  } = req.body
-    
-  const newMensaje = new Mensaje({
-    mensaje,
-    date: new Date(),
-    usuarioId,
-    salaId
-  })
-      
-  const savedMensaje = await newMensaje.save()
-  mensajes = mensajes.concat(savedMensaje)
-
-  res.json(savedMensaje)
-})
-
-
+// MENSAJES
+app.use('/api/mensajes', mensajesRouter)
 
 
 
