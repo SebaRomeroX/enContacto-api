@@ -27,4 +27,16 @@ mensajesRouter.post('/', async (req, res) => {
 })
 
 
+// DELETE
+mensajesRouter.delete('/:id', async (req, res) => {
+  const { id } = req.params
+
+  Mensaje.findByIdAndDelete(id).then(result => {
+    res.status(204).end()
+  }).catch(error => console.log(error))
+
+  res.status(204).end()
+})
+
+
 module.exports = mensajesRouter

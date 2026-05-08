@@ -1,0 +1,6 @@
+POST http://localhost:3001/api/salas
+Content-Type: application/json
+
+{
+  "nombre": "prueba delete"
+}

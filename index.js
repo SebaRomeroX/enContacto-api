@@ -4,8 +4,10 @@ require('./mongo')
 const express = require('express')   
 const cors = require('cors')
 
-const Mensaje = require('./models/Mensaje')
 const mensajesRouter = require('./controllers/mensajes')
+const usuariosRouter = require('./controllers/usuarios')
+const salasRouter = require('./controllers/salas')
+
 
 const app = express()
 app.use(cors())
@@ -24,6 +26,12 @@ app.get('/algo', (req, res) => {
 
 // MENSAJES
 app.use('/api/mensajes', mensajesRouter)
+
+// USUARIOS
+app.use('/api/usuarios', usuariosRouter)
+
+// SALAS
+app.use('/api/salas', salasRouter)
 
 
 

@@ -1,8 +1,0 @@
-POST http://localhost:3001/api/mensajes/
-Content-Type: application/json
-
-{
-  "mensaje": "Mas bien vienen de la DB",
-  "usuarioId": "user-a65973f5-eeea-49f4-a961-524469665658",
-  "salaId": "sala-f54828dc-35af-485a-ac9e-9b776f4afa1a"
-}

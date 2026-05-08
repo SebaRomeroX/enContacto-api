@@ -1,0 +1,6 @@
+POST http://localhost:3001/api/mensajes/
+Content-Type: application/json
+
+{
+  "mensaje": "Mas bien vienen de la DB"
+}
