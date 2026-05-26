@@ -12,7 +12,7 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "vercel-start": "node index.js",
-    "vercel-build": "pnpm install --ignore-scripts && pnpm run build",
+    "vercel-build": "pnpm install --no-frozen-lockfile && pnpm rebuild bcrypt && pnpm run build",
     "build": "mkdir -p dist && echo 'console.log(\"Build OK\")' > dist/index.js"
   },
   "devDependencies": {
