@@ -41,7 +41,10 @@ app.use('/api/login', loginRouter)
 
 
 
-// SALIDA
-const server = app.listen(3001, () => {
-  console.log(`tamo ativo en ${3001}`)
-})
+// SALIDA LOCAL
+// const server = app.listen(3001, () => {
+//   console.log(`tamo ativo en ${3001}`)
+// })
+
+// EXPORT PARA VERCEL
+module.exports = app;
