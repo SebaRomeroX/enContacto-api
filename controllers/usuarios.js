@@ -1,6 +1,6 @@
 const usuariosRouter = require('express').Router()
 const Usuario = require('../models/Usuario')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 
 // GET
