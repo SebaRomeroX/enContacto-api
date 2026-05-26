@@ -13,7 +13,7 @@
     "start": "node index.js",
     "vercel-start": "node index.js",
     "vercel-build": "pnpm install --ignore-scripts && pnpm run build",
-    "build": "echo 'Build completado' || exit 0"
+    "build": "mkdir -p dist && echo 'console.log(\"Build OK\")' > dist/index.js"
   },
   "devDependencies": {
     "nodemon": "3.1.14"
