@@ -11,7 +11,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "vercel-start": "node index.js"
+    "vercel-start": "node index.js",
+    "vercel-build": "pnpm install --ignore-scripts && pnpm run build"
   },
   "devDependencies": {
     "nodemon": "3.1.14"
