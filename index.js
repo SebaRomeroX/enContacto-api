@@ -7,6 +7,7 @@ const cors = require('cors')
 const mensajesRouter = require('./controllers/mensajes')
 const usuariosRouter = require('./controllers/usuarios')
 const salasRouter = require('./controllers/salas')
+const loginRouter = require('./controllers/login')
 
 
 const app = express()
@@ -32,6 +33,9 @@ app.use('/api/usuarios', usuariosRouter)
 
 // SALAS
 app.use('/api/salas', salasRouter)
+
+// LOGIN
+app.use('/api/login', loginRouter)
 
 
 
