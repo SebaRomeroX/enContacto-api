@@ -1,0 +1,93 @@
+Issues Plan - enContacto-api
+===========================
+
+🔴 URGENCIA CRÍTICA (bugs)
+---------------------------
+
+1. Doble res.status(204).end() en DELETE de mensajes.js
+   Archivo: controllers/mensajes.js:17-20
+   Descripción: Se envía res.status(204).end() dentro del .then() y también
+   fuera de la promesa, causando ERR_HTTP_HEADERS_SENT.
+
+2. Doble res.status(204).end() en DELETE de salas.js
+   Archivo: controllers/salas.js:17-20
+   Descripción: Mismo error que en mensajes.js.
+
+3. Doble res.status(204).end() en DELETE de usuarios.js
+   Archivo: controllers/usuarios.js:21-24
+   Descripción: Mismo error que en mensajes.js.
+
+4. Login no retorna tras error 401 + crash por user null
+   Archivo: controllers/login.js:11-16
+   Descripción: Si el usuario no existe, envía res.status(401) pero no retorna,
+   y la ejecución continúa accediendo a user._id (TypeError) y enviando
+   un segundo response.
+
+
+🟡 URGENCIA ALTA (seguridad)
+-----------------------------
+
+5. Sin autenticación JWT en rutas protegidas
+   Archivos: controllers/mensajes.js, controllers/salas.js, controllers/usuarios.js
+   Descripción: Ninguna ruta verifica el token JWT. Cualquiera puede crear,
+   leer o borrar datos sin autenticación.
+
+6. Passwords expuestos en GET /api/usuarios
+   Archivo: controllers/usuarios.js
+   Modelo: models/Usuario.js
+   Descripción: El endpoint devuelve todos los campos, incluyendo el hash
+   de la contraseña (campo "contra"). Los hashes nunca deben exponerse.
+
+7. Sin rate limiting en login
+   Archivo: controllers/login.js
+   Descripción: El endpoint POST /api/login es vulnerable a ataques de
+   fuerza bruta.
+
+8. Sin validación de entrada en ningún endpoint
+   Archivos: todos los controllers
+   Descripción: No se validan tipos, campos requeridos ni se sanitizan
+   los inputs del request body.
+
+
+🟢 URGENCIA MEDIA (calidad de código)
+--------------------------------------
+
+9. Sin try-catch en handlers async
+   Archivos: todos los controllers
+   Descripción: Aunque Express 5 maneja rejected promises automáticamente,
+   si algo falla antes de enviar response el cliente se queda colgado.
+   Falta un middleware de error global.
+
+10. pnpm-workspace.yaml inválido
+    Archivo: pnpm-workspace.yaml
+    Descripción: Contiene el string "set this to true or false" en vez de
+    un booleano real (true/false).
+
+11. Test placeholder que no testea nada
+    Archivo: package.json (script "test")
+    Descripción: "echo Error: no test specified && exit 1" reporta error
+    en vez de ejecutar pruebas.
+
+12. Falta .env.example
+    Descripción: No hay documentación de las variables de entorno
+    requeridas (MONGO_DB_URI, TOKEN_KEY).
+
+13. Falta README
+    Descripción: No hay descripción del proyecto, instrucciones de uso,
+    lista de endpoints, etc.
+
+14. Sin linter/formatter configurado
+    Descripción: No hay ESLint ni Prettier configurados en el proyecto.
+
+
+🔵 URGENCIA BAJA (cosméticos)
+------------------------------
+
+15. Typo en mongo.js
+    Archivo: mongo.js:5
+    Descripción: "Connnect DB" debería ser "Connect DB" (triple n).
+
+16. POST /api/mensajes - create_msj.rest no envía campos requeridos
+    Archivo: requests/mensajes/create_msj.rest
+    Descripción: El modelo Mensaje espera usuarioId y salaId, pero el
+    archivo .rest de prueba solo envía "mensaje".
