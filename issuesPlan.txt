@@ -4,18 +4,21 @@ Issues Plan - enContacto-api
 🔴 URGENCIA CRÍTICA (bugs)
 ---------------------------
 
-1. Doble res.status(204).end() en DELETE de mensajes.js
+✅ 1. Doble res.status(204).end() en DELETE de mensajes.js
    Archivo: controllers/mensajes.js:17-20
    Descripción: Se envía res.status(204).end() dentro del .then() y también
    fuera de la promesa, causando ERR_HTTP_HEADERS_SENT.
+   Resuelto: controllers/mensajes.js (await + un solo 204, test en test/mensajes.test.js)
 
-2. Doble res.status(204).end() en DELETE de salas.js
+✅ 2. Doble res.status(204).end() en DELETE de salas.js
    Archivo: controllers/salas.js:17-20
    Descripción: Mismo error que en mensajes.js.
+   Resuelto: controllers/salas.js (await + un solo 204, test en test/salas.test.js)
 
-3. Doble res.status(204).end() en DELETE de usuarios.js
+✅ 3. Doble res.status(204).end() en DELETE de usuarios.js
    Archivo: controllers/usuarios.js:21-24
    Descripción: Mismo error que en mensajes.js.
+   Resuelto: controllers/usuarios.js (await + un solo 204, test en test/usuarios.test.js)
 
 4. Login no retorna tras error 401 + crash por user null
    Archivo: controllers/login.js:11-16

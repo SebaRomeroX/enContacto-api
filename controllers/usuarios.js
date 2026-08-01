@@ -35,10 +35,7 @@ usuariosRouter.post('/', async (req, res) => {
 usuariosRouter.delete('/:id', async (req, res) => {
   const { id } = req.params
 
-  Usuario.findByIdAndDelete(id).then(result => {
-    res.status(204).end()
-  }).catch(error => console.log(error))
-
+  await Usuario.findByIdAndDelete(id)
   res.status(204).end()
 })
 
