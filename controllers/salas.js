@@ -27,10 +27,7 @@ salasRouter.post('/', async (req, res) => {
 salasRouter.delete('/:id', async (req, res) => {
   const { id } = req.params
 
-  Sala.findByIdAndDelete(id).then(result => {
-    res.status(204).end()
-  }).catch(error => console.log(error))
-
+  await Sala.findByIdAndDelete(id)
   res.status(204).end()
 })
 
