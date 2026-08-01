@@ -31,10 +31,7 @@ mensajesRouter.post('/', async (req, res) => {
 mensajesRouter.delete('/:id', async (req, res) => {
   const { id } = req.params
 
-  Mensaje.findByIdAndDelete(id).then(result => {
-    res.status(204).end()
-  }).catch(error => console.log(error))
-
+  await Mensaje.findByIdAndDelete(id)
   res.status(204).end()
 })
 
