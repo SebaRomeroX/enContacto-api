@@ -1,5 +1,6 @@
 const mensajesRouter = require('express').Router()
 const Mensaje = require('../models/Mensaje')
+const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
 
 // GET
 mensajesRouter.get('/', async (req, res) => {
@@ -14,6 +15,11 @@ mensajesRouter.post('/', async (req, res) => {
     usuarioId,
     salaId,
   } = req.body
+
+  const validationErrors = validateRequiredStringFields(req.body, ['mensaje', 'usuarioId', 'salaId'])
+  if (validationErrors.length > 0) {
+    return sendValidationError(res, validationErrors)
+  }
     
   const newMensaje = new Mensaje({
     mensaje,

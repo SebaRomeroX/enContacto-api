@@ -1,6 +1,7 @@
 const usuariosRouter = require('express').Router()
 const Usuario = require('../models/Usuario')
 const bcrypt = require('bcryptjs')
+const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
 
 
 // GET
@@ -17,7 +18,15 @@ usuariosRouter.post('/', async (req, res) => {
     contra,
     rol
   } = req.body
-    
+
+  const validationErrors = validateRequiredStringFields(req.body, ['nombre', 'contra'])
+  if (rol !== undefined && rol !== null && typeof rol !== 'string') {
+    validationErrors.push(`campo 'rol' debe ser un string`)
+  }
+  if (validationErrors.length > 0) {
+    return sendValidationError(res, validationErrors)
+  }
+
   const passwordHash = await bcrypt.hash(contra, 10)
   const newUsuario = new Usuario({
     foto,

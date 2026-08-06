@@ -2,11 +2,17 @@ const loginRouter = require('express').Router()
 const Usuario = require('../models/Usuario')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
 
 
 loginRouter.post('/', async (req, res) => {
   const { body } = req
   const { nombre, contra } = body
+
+  const validationErrors = validateRequiredStringFields(body, ['nombre', 'contra'])
+  if (validationErrors.length > 0) {
+    return sendValidationError(res, validationErrors)
+  }
 
   const user = await Usuario.findOne({ nombre })
 
@@ -15,7 +21,7 @@ loginRouter.post('/', async (req, res) => {
     : await bcrypt.compare(contra, user.contra)
 
   if(!passwordCorrect) {
-    res.status(401).json({
+    return res.status(401).json({
       error: 'datos incorrectos'
     })
   }

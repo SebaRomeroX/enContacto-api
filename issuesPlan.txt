@@ -20,11 +20,13 @@ Issues Plan - enContacto-api
    Descripción: Mismo error que en mensajes.js.
    Resuelto: controllers/usuarios.js (await + un solo 204, test en test/usuarios.test.js)
 
-4. Login no retorna tras error 401 + crash por user null
+✅ 4. Login no retorna tras error 401 + crash por user null
    Archivo: controllers/login.js:11-16
    Descripción: Si el usuario no existe, envía res.status(401) pero no retorna,
    y la ejecución continúa accediendo a user._id (TypeError) y enviando
    un segundo response.
+   Resuelto: controllers/login.js (return tras el 401, test en test/login.test.js)
+   Nota: resuelto junto al issue #8 (validación de entrada en login).
 
 
 🟡 URGENCIA ALTA (seguridad)
@@ -46,10 +48,14 @@ Issues Plan - enContacto-api
    Descripción: El endpoint POST /api/login es vulnerable a ataques de
    fuerza bruta.
 
-8. Sin validación de entrada en ningún endpoint
+✅ 8. Sin validación de entrada en ningún endpoint
    Archivos: todos los controllers
    Descripción: No se validan tipos, campos requeridos ni se sanitizan
    los inputs del request body.
+   Resuelto: nuevo utils/validation.js (validateRequiredStringFields +
+   sendValidationError), aplicado en POST de login.js, usuarios.js, salas.js
+   y mensajes.js. Sin dependencias nuevas. Nota: "rol" en usuarios valida tipo
+   string pero no restringe a lista permitida ['admin','user','mod'].
 
 
 🟢 URGENCIA MEDIA (calidad de código)

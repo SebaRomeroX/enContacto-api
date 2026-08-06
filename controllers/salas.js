@@ -1,5 +1,6 @@
 const salasRouter = require('express').Router()
 const Sala = require('../models/Sala')
+const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
 
 
 // GET
@@ -13,7 +14,12 @@ salasRouter.post('/', async (req, res) => {
   const {
     nombre
   } = req.body
-    
+
+  const validationErrors = validateRequiredStringFields(req.body, ['nombre'])
+  if (validationErrors.length > 0) {
+    return sendValidationError(res, validationErrors)
+  }
+
   const newSala = new Sala({
     nombre
   })
