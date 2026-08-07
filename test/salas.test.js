@@ -1,5 +1,6 @@
-const { test, describe, after } = require('node:test')
+const { test, describe, beforeEach, after } = require('node:test')
 const assert = require('node:assert/strict')
+const jwt = require('jsonwebtoken')
 
 const Sala = require('../models/Sala')
 const originalFindByIdAndDelete = Sala.findByIdAndDelete
@@ -7,12 +8,35 @@ const originalFindByIdAndDelete = Sala.findByIdAndDelete
 const app = require('express')()
 app.use('/api/salas', require('../controllers/salas'))
 
+beforeEach(() => {
+  process.env.TOKEN_KEY = 'test-token-key'
+})
+
 after(async () => {
   Sala.findByIdAndDelete = originalFindByIdAndDelete
+  delete process.env.TOKEN_KEY
 })
 
 describe('DELETE /api/salas/:id', () => {
-  test('responde 204 por HTTP', async () => {
+  test('responde 204 por HTTP con token válido', async () => {
+    Sala.findByIdAndDelete = async () => ({})
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise(resolve => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 204)
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#5)', async () => {
     Sala.findByIdAndDelete = async () => ({})
 
     const server = app.listen(0)
@@ -20,7 +44,7 @@ describe('DELETE /api/salas/:id', () => {
     try {
       const baseUrl = `http://localhost:${server.address().port}`
       const res = await fetch(`${baseUrl}/api/salas/abc123`, { method: 'DELETE' })
-      assert.equal(res.status, 204)
+      assert.equal(res.status, 401)
     } finally {
       await new Promise(resolve => server.close(resolve))
     }
@@ -31,7 +55,7 @@ describe('DELETE /api/salas/:id', () => {
 
     const router = require('../controllers/salas')
     const deleteLayer = router.stack.find(layer => layer.route && layer.route.methods.delete)
-    const handler = deleteLayer.route.stack[0].handle
+    const handler = deleteLayer.route.stack[deleteLayer.route.stack.length - 1].handle
 
     const res = {
       ends: 0,

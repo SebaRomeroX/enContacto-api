@@ -32,10 +32,17 @@ Issues Plan - enContacto-api
 🟡 URGENCIA ALTA (seguridad)
 -----------------------------
 
-5. Sin autenticación JWT en rutas protegidas
+✅ 5. Sin autenticación JWT en rutas protegidas
    Archivos: controllers/mensajes.js, controllers/salas.js, controllers/usuarios.js
    Descripción: Ninguna ruta verifica el token JWT. Cualquiera puede crear,
    leer o borrar datos sin autenticación.
+   Resuelto: nuevo utils/auth.js (middleware requireToken, 401 sin token
+   válido), aplicado en POST y DELETE de mensajes.js, salas.js y usuarios.js.
+   Tests en test/auth.test.js y 401 sin token en los test de cada recurso.
+   Nota: los GET quedan públicos por ahora a propósito. Reconsiderar
+   al implementar roles/permisos (POST/DELETE protegidos). Los roles
+   ('admin','user','mod') se gestionarán más adelante cuando la app
+   esté más completa.
 
 6. Passwords expuestos en GET /api/usuarios
    Archivo: controllers/usuarios.js

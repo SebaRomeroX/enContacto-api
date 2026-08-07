@@ -2,6 +2,7 @@ const usuariosRouter = require('express').Router()
 const Usuario = require('../models/Usuario')
 const bcrypt = require('bcryptjs')
 const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const { requireToken } = require('../utils/auth')
 
 
 // GET
@@ -11,7 +12,7 @@ usuariosRouter.get('/', async (req, res) => {
 })
 
 // POST
-usuariosRouter.post('/', async (req, res) => {
+usuariosRouter.post('/', requireToken, async (req, res) => {
   const {
     foto,
     nombre,
@@ -41,7 +42,7 @@ usuariosRouter.post('/', async (req, res) => {
 
 
 // DELETE
-usuariosRouter.delete('/:id', async (req, res) => {
+usuariosRouter.delete('/:id', requireToken, async (req, res) => {
   const { id } = req.params
 
   await Usuario.findByIdAndDelete(id)

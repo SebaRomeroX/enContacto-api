@@ -1,6 +1,7 @@
 const mensajesRouter = require('express').Router()
 const Mensaje = require('../models/Mensaje')
 const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const { requireToken } = require('../utils/auth')
 
 // GET
 mensajesRouter.get('/', async (req, res) => {
@@ -9,7 +10,7 @@ mensajesRouter.get('/', async (req, res) => {
 })
 
 // POST
-mensajesRouter.post('/', async (req, res) => {
+mensajesRouter.post('/', requireToken, async (req, res) => {
   const {
     mensaje,
     usuarioId,
@@ -34,7 +35,7 @@ mensajesRouter.post('/', async (req, res) => {
 
 
 // DELETE
-mensajesRouter.delete('/:id', async (req, res) => {
+mensajesRouter.delete('/:id', requireToken, async (req, res) => {
   const { id } = req.params
 
   await Mensaje.findByIdAndDelete(id)
