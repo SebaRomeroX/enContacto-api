@@ -17,6 +17,30 @@ after(async () => {
   delete process.env.TOKEN_KEY
 })
 
+describe('GET /api/usuarios', () => {
+  test('no expone el campo "contra" en la respuesta (#6)', async () => {
+    Usuario.find = async () => [
+      new Usuario({ _id: 'abc', nombre: 'pepe', contra: 'hash-secreto', rol: 'user' })
+    ]
+
+    const server = app.listen(0)
+    await new Promise(resolve => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios`)
+      const body = await res.json()
+
+      assert.equal(res.status, 200)
+      assert.equal(body.length, 1)
+      assert.equal(body[0].nombre, 'pepe')
+      assert.equal(body[0].contra, undefined)
+      assert.equal(JSON.stringify(body).includes('hash-secreto'), false)
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
+  })
+})
+
 describe('DELETE /api/usuarios/:id', () => {
   test('responde 204 por HTTP con token válido', async () => {
     Usuario.findByIdAndDelete = async () => ({})

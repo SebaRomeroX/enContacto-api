@@ -44,11 +44,14 @@ Issues Plan - enContacto-api
    ('admin','user','mod') se gestionarán más adelante cuando la app
    esté más completa.
 
-6. Passwords expuestos en GET /api/usuarios
+✅ 6. Passwords expuestos en GET /api/usuarios
    Archivo: controllers/usuarios.js
    Modelo: models/Usuario.js
    Descripción: El endpoint devuelve todos los campos, incluyendo el hash
    de la contraseña (campo "contra"). Los hashes nunca deben exponerse.
+   Resuelto: models/Usuario.js (delete returnedObject.contra en el transform
+   toJSON, protege GET y POST). No afecta a login, que lee user.contra del
+   documento de Mongoose antes de serializar. Test en test/usuarios.test.js.
 
 7. Sin rate limiting en login
    Archivo: controllers/login.js
