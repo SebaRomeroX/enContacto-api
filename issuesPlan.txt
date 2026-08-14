@@ -57,6 +57,11 @@ Issues Plan - enContacto-api
    Archivo: controllers/login.js
    Descripción: El endpoint POST /api/login es vulnerable a ataques de
    fuerza bruta.
+   Resuelto: nuevo utils/rateLimit.js (createRateLimiter en memoria por IP,
+   windowMs 15 min, max 10 intentos, 429 al exceder), aplicado en POST de
+   login.js. Sin dependencias nuevas. Test en test/login.test.js.
+   Nota: límite por instancia en memoria; en Vercel serverless no es
+   compartido entre instancias (baseline, no barrera infalible).
 
 ✅ 8. Sin validación de entrada en ningún endpoint
    Archivos: todos los controllers
@@ -110,3 +115,16 @@ Issues Plan - enContacto-api
     Archivo: requests/mensajes/create_msj.rest
     Descripción: El modelo Mensaje espera usuarioId y salaId, pero el
     archivo .rest de prueba solo envía "mensaje".
+
+
+Siguientes features o posibles mejoras futuras
+==============================================
+
+17. Considerar una forma más robusta de rate limiting en login
+    Archivo: utils/rateLimit.js, controllers/login.js
+    Descripción: El limiter actual (#7) es un Map en memoria por instancia;
+    en Vercel serverless no es compartido entre cold starts ni instancias
+    concurrentes. Considerar reemplazarlo por un rate limiting persistente
+    y distribuido (p.ej. rate-limiter-flexible con MongoDB o Redis),
+    además de evaluar medidas complementarias como reintentos con backoff
+    o bloqueo temporal de cuentas tras N fallos.

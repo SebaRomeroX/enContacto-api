@@ -113,4 +113,28 @@ describe('POST /api/login', () => {
       await new Promise(resolve => server.close(resolve))
     }
   })
+
+  test('responde 429 al exceder el límite de intentos (#7)', async () => {
+    Usuario.findOne = async () => ({ _id: 'id', nombre: 'pepe', contra: 'hash' })
+    bcrypt.compare = async () => false
+
+    const { server, baseUrl } = await startServer(buildApp())
+    try {
+      const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: 'pepe', contra: 'mala' })
+      }
+
+      let last
+      for (let i = 0; i < 11; i++) {
+        last = await fetch(`${baseUrl}/api/login`, options)
+      }
+      const body = await last.json()
+      assert.equal(last.status, 429)
+      assert.equal(body.error, 'demasiados intentos, intente más tarde')
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
+  })
 })

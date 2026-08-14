@@ -3,9 +3,10 @@ const Usuario = require('../models/Usuario')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const { createRateLimiter } = require('../utils/rateLimit')
 
 
-loginRouter.post('/', async (req, res) => {
+loginRouter.post('/', createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10 }), async (req, res) => {
   const { body } = req
   const { nombre, contra } = body
 
