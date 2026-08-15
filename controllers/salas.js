@@ -1,8 +1,10 @@
 const salasRouter = require('express').Router()
 const Sala = require('../models/Sala')
-const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const {
+  validateRequiredStringFields,
+  sendValidationError
+} = require('../utils/validation')
 const { requireToken } = require('../utils/auth')
-
 
 // GET
 salasRouter.get('/', async (req, res) => {
@@ -12,9 +14,7 @@ salasRouter.get('/', async (req, res) => {
 
 // POST
 salasRouter.post('/', requireToken, async (req, res) => {
-  const {
-    nombre
-  } = req.body
+  const { nombre } = req.body
 
   const validationErrors = validateRequiredStringFields(req.body, ['nombre'])
   if (validationErrors.length > 0) {
@@ -24,11 +24,10 @@ salasRouter.post('/', requireToken, async (req, res) => {
   const newSala = new Sala({
     nombre
   })
-      
+
   const savedSala = await newSala.save()
   res.json(savedSala)
 })
-
 
 // DELETE
 salasRouter.delete('/:id', requireToken, async (req, res) => {
@@ -37,6 +36,5 @@ salasRouter.delete('/:id', requireToken, async (req, res) => {
   await Sala.findByIdAndDelete(id)
   res.status(204).end()
 })
-
 
 module.exports = salasRouter

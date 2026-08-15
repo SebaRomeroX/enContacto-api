@@ -1,9 +1,11 @@
 const usuariosRouter = require('express').Router()
 const Usuario = require('../models/Usuario')
 const bcrypt = require('bcryptjs')
-const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const {
+  validateRequiredStringFields,
+  sendValidationError
+} = require('../utils/validation')
 const { requireToken } = require('../utils/auth')
-
 
 // GET
 usuariosRouter.get('/', async (req, res) => {
@@ -13,14 +15,12 @@ usuariosRouter.get('/', async (req, res) => {
 
 // POST
 usuariosRouter.post('/', requireToken, async (req, res) => {
-  const {
-    foto,
-    nombre,
-    contra,
-    rol
-  } = req.body
+  const { foto, nombre, contra, rol } = req.body
 
-  const validationErrors = validateRequiredStringFields(req.body, ['nombre', 'contra'])
+  const validationErrors = validateRequiredStringFields(req.body, [
+    'nombre',
+    'contra'
+  ])
   if (rol !== undefined && rol !== null && typeof rol !== 'string') {
     validationErrors.push(`campo 'rol' debe ser un string`)
   }
@@ -35,11 +35,10 @@ usuariosRouter.post('/', requireToken, async (req, res) => {
     contra: passwordHash,
     rol
   })
-      
+
   const savedUsuario = await newUsuario.save()
   res.json(savedUsuario)
 })
-
 
 // DELETE
 usuariosRouter.delete('/:id', requireToken, async (req, res) => {
@@ -48,6 +47,5 @@ usuariosRouter.delete('/:id', requireToken, async (req, res) => {
   await Usuario.findByIdAndDelete(id)
   res.status(204).end()
 })
-
 
 module.exports = usuariosRouter

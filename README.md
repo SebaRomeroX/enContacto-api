@@ -23,33 +23,33 @@ Auth: header `Authorization: Bearer <token>` (expiración 24 h). Los GET quedaro
 
 ### Login
 
-| Método | Ruta | Auth | Body | Descripción |
-|---|---|---|---|---|
-| POST | `/api/login` | no | `nombre`, `contra` | Devuelve `{ nombre, token }`. Rate limit: 10 intentos / 15 min. |
+| Método | Ruta         | Auth | Body               | Descripción                                                     |
+| ------ | ------------ | ---- | ------------------ | --------------------------------------------------------------- |
+| POST   | `/api/login` | no   | `nombre`, `contra` | Devuelve `{ nombre, token }`. Rate limit: 10 intentos / 15 min. |
 
 ### Usuarios
 
-| Método | Ruta | Auth | Body | Descripción |
-|---|---|---|---|---|
-| GET | `/api/usuarios` | no | — | Lista usuarios (no expone `contra`). |
-| POST | `/api/usuarios` | Bearer | `foto`, `nombre`*, `contra`*, `rol` | Crea usuario (contra hasheada con bcrypt). |
-| DELETE | `/api/usuarios/:id` | Bearer | — | Elimina usuario. |
+| Método | Ruta                | Auth   | Body                                | Descripción                                |
+| ------ | ------------------- | ------ | ----------------------------------- | ------------------------------------------ |
+| GET    | `/api/usuarios`     | no     | —                                   | Lista usuarios (no expone `contra`).       |
+| POST   | `/api/usuarios`     | Bearer | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada con bcrypt). |
+| DELETE | `/api/usuarios/:id` | Bearer | —                                   | Elimina usuario.                           |
 
 ### Salas
 
-| Método | Ruta | Auth | Body | Descripción |
-|---|---|---|---|---|
-| GET | `/api/salas` | no | — | Lista salas. |
-| POST | `/api/salas` | Bearer | `nombre`* | Crea sala. |
-| DELETE | `/api/salas/:id` | Bearer | — | Elimina sala. |
+| Método | Ruta             | Auth   | Body      | Descripción   |
+| ------ | ---------------- | ------ | --------- | ------------- |
+| GET    | `/api/salas`     | no     | —         | Lista salas.  |
+| POST   | `/api/salas`     | Bearer | `nombre`* | Crea sala.    |
+| DELETE | `/api/salas/:id` | Bearer | —         | Elimina sala. |
 
 ### Mensajes
 
-| Método | Ruta | Auth | Body | Descripción |
-|---|---|---|---|---|
-| GET | `/api/mensajes` | no | — | Lista mensajes. |
-| POST | `/api/mensajes` | Bearer | `mensaje`*, `usuarioId`*, `salaId`* | Crea mensaje (`date` se asigna solo). |
-| DELETE | `/api/mensajes/:id` | Bearer | — | Elimina mensaje. |
+| Método | Ruta                | Auth   | Body                                | Descripción                           |
+| ------ | ------------------- | ------ | ----------------------------------- | ------------------------------------- |
+| GET    | `/api/mensajes`     | no     | —                                   | Lista mensajes.                       |
+| POST   | `/api/mensajes`     | Bearer | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo). |
+| DELETE | `/api/mensajes/:id` | Bearer | —                                   | Elimina mensaje.                      |
 
 \* obligatorio.
 

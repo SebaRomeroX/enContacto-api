@@ -19,7 +19,7 @@ function buildApp() {
 
 async function startServer(app) {
   const server = app.listen(0)
-  await new Promise(resolve => server.once('listening', resolve))
+  await new Promise((resolve) => server.once('listening', resolve))
   const baseUrl = `http://localhost:${server.address().port}`
   return { server, baseUrl }
 }
@@ -48,10 +48,10 @@ describe('POST /api/login', () => {
       const body = await res.json()
       assert.equal(res.status, 400)
       assert.equal(body.error, 'solicitud inválida')
-      assert.ok(body.detalles.some(d => d.includes('nombre')))
-      assert.ok(body.detalles.some(d => d.includes('contra')))
+      assert.ok(body.detalles.some((d) => d.includes('nombre')))
+      assert.ok(body.detalles.some((d) => d.includes('contra')))
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
@@ -70,12 +70,16 @@ describe('POST /api/login', () => {
       assert.equal(res.status, 401)
       assert.deepEqual(body, { error: 'datos incorrectos' })
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
   test('responde 401 con contraseña incorrecta (#4)', async () => {
-    Usuario.findOne = async () => ({ _id: 'id', nombre: 'pepe', contra: 'hash' })
+    Usuario.findOne = async () => ({
+      _id: 'id',
+      nombre: 'pepe',
+      contra: 'hash'
+    })
     bcrypt.compare = async () => false
 
     const { server, baseUrl } = await startServer(buildApp())
@@ -89,12 +93,16 @@ describe('POST /api/login', () => {
       assert.equal(res.status, 401)
       assert.deepEqual(body, { error: 'datos incorrectos' })
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
   test('responde 200 con token al enviar credenciales correctas', async () => {
-    Usuario.findOne = async () => ({ _id: 'abc', nombre: 'pepe', contra: 'hash' })
+    Usuario.findOne = async () => ({
+      _id: 'abc',
+      nombre: 'pepe',
+      contra: 'hash'
+    })
     bcrypt.compare = async () => true
     jwt.sign = () => 'token-de-prueba'
 
@@ -110,12 +118,16 @@ describe('POST /api/login', () => {
       assert.equal(body.nombre, 'pepe')
       assert.equal(body.token, 'token-de-prueba')
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
   test('responde 429 al exceder el límite de intentos (#7)', async () => {
-    Usuario.findOne = async () => ({ _id: 'id', nombre: 'pepe', contra: 'hash' })
+    Usuario.findOne = async () => ({
+      _id: 'id',
+      nombre: 'pepe',
+      contra: 'hash'
+    })
     bcrypt.compare = async () => false
 
     const { server, baseUrl } = await startServer(buildApp())
@@ -134,12 +146,16 @@ describe('POST /api/login', () => {
       assert.equal(last.status, 429)
       assert.equal(body.error, 'demasiados intentos, intente más tarde')
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 
   test('429 solo afecta a la IP que excede el límite (#7)', async () => {
-    Usuario.findOne = async () => ({ _id: 'id', nombre: 'pepe', contra: 'hash' })
+    Usuario.findOne = async () => ({
+      _id: 'id',
+      nombre: 'pepe',
+      contra: 'hash'
+    })
     bcrypt.compare = async () => false
 
     const { server, baseUrl } = await startServer(buildApp())
@@ -161,7 +177,7 @@ describe('POST /api/login', () => {
       assert.equal(res.status, 401)
       assert.deepEqual(await res.json(), { error: 'datos incorrectos' })
     } finally {
-      await new Promise(resolve => server.close(resolve))
+      await new Promise((resolve) => server.close(resolve))
     }
   })
 })

@@ -14,7 +14,7 @@ function errorHandler(error, req, res, next) {
   if (error.name === 'ValidationError') {
     return res.status(400).json({
       error: 'solicitud inválida',
-      detalles: Object.values(error.errors).map(e => e.message)
+      detalles: Object.values(error.errors).map((e) => e.message)
     })
   }
 

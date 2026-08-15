@@ -32,7 +32,9 @@ function callMiddleware(authorization) {
       sentBody = body
     }
   }
-  const next = () => { nextCalled = true }
+  const next = () => {
+    nextCalled = true
+  }
 
   requireToken(req, res, next)
 

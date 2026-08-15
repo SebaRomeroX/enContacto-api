@@ -4,7 +4,7 @@ const mensajeSchema = new Schema({
   mensaje: String,
   usuarioId: String,
   salaId: String,
-  date: Date,
+  date: Date
 })
 
 mensajeSchema.set('toJSON', {

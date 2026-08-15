@@ -1,6 +1,9 @@
 const mensajesRouter = require('express').Router()
 const Mensaje = require('../models/Mensaje')
-const { validateRequiredStringFields, sendValidationError } = require('../utils/validation')
+const {
+  validateRequiredStringFields,
+  sendValidationError
+} = require('../utils/validation')
 const { requireToken } = require('../utils/auth')
 
 // GET
@@ -11,28 +14,27 @@ mensajesRouter.get('/', async (req, res) => {
 
 // POST
 mensajesRouter.post('/', requireToken, async (req, res) => {
-  const {
-    mensaje,
-    usuarioId,
-    salaId,
-  } = req.body
+  const { mensaje, usuarioId, salaId } = req.body
 
-  const validationErrors = validateRequiredStringFields(req.body, ['mensaje', 'usuarioId', 'salaId'])
+  const validationErrors = validateRequiredStringFields(req.body, [
+    'mensaje',
+    'usuarioId',
+    'salaId'
+  ])
   if (validationErrors.length > 0) {
     return sendValidationError(res, validationErrors)
   }
-    
+
   const newMensaje = new Mensaje({
     mensaje,
     date: new Date(),
     usuarioId,
     salaId
   })
-      
+
   const savedMensaje = await newMensaje.save()
   res.json(savedMensaje)
 })
-
 
 // DELETE
 mensajesRouter.delete('/:id', requireToken, async (req, res) => {
@@ -41,6 +43,5 @@ mensajesRouter.delete('/:id', requireToken, async (req, res) => {
   await Mensaje.findByIdAndDelete(id)
   res.status(204).end()
 })
-
 
 module.exports = mensajesRouter

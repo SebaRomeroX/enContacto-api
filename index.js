@@ -1,7 +1,7 @@
 require('dotenv').config()
 require('./mongo')
 
-const express = require('express')   
+const express = require('express')
 const cors = require('cors')
 
 const mensajesRouter = require('./controllers/mensajes')
@@ -10,14 +10,11 @@ const salasRouter = require('./controllers/salas')
 const loginRouter = require('./controllers/login')
 const { errorHandler } = require('./utils/errorHandler')
 
-
 const app = express()
 app.set('trust proxy', 1)
 app.use(cors())
 app.use(express.json())
 //---
-
-
 
 // ALGO
 app.get('/algo', (req, res) => {
@@ -25,7 +22,6 @@ app.get('/algo', (req, res) => {
     mensaje: 'Algo en local'
   })
 })
-
 
 // MENSAJES
 app.use('/api/mensajes', mensajesRouter)
@@ -42,14 +38,10 @@ app.use('/api/login', loginRouter)
 // MANEJO DE ERRORES GLOBAL
 app.use(errorHandler)
 
-
-
-
-
 // SALIDA LOCAL
 // const server = app.listen(3001, () => {
 //   console.log(`tamo ativo en ${3001}`)
 // })
 
 // EXPORT PARA VERCEL
-module.exports = app;
+module.exports = app
