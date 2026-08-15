@@ -113,9 +113,14 @@ Issues Plan - enContacto-api
     Resuelto: nuevo .env.example con ambas variables documentadas y
     placeholders (MONGO_DB_URI para mongo.js, TOKEN_KEY para login/auth).
 
-13. Falta README
+✅ 13. Falta README
     Descripción: No hay descripción del proyecto, instrucciones de uso,
     lista de endpoints, etc.
+    Resuelto: nuevo README.md (descripción, configuración local, tabla de
+    endpoints, autenticación, errores, tests, deploy en Vercel y REST
+    Client).
+    TODO: revisar que el README siga actualizado cuando terminemos con
+    todos los puntos del plan (p. ej. si se cambian endpoints, auth o roles).
 
 14. Sin linter/formatter configurado
     Descripción: No hay ESLint ni Prettier configurados en el proyecto.
