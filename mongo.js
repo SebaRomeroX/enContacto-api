@@ -1,12 +1,12 @@
 const dns = require('node:dns/promises')
 dns.setServers(['8.8.8.8', '1.1.1.1'])
 const mongoose = require('mongoose')
-const conectionString = process.env.MONGO_DB_URI
+const connectionString = process.env.MONGO_DB_URI
 
 mongoose
-  .connect(conectionString)
+  .connect(connectionString)
   .then(() => {
-    console.log('Connnect DB enContacto')
+    console.log('Connect DB enContacto')
   })
   .catch((err) => {
     console.error(err)

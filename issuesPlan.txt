@@ -135,9 +135,11 @@ Issues Plan - enContacto-api
 🔵 URGENCIA BAJA (cosméticos)
 ------------------------------
 
-15. Typo en mongo.js
+✅ 15. Typo en mongo.js
     Archivo: mongo.js:5
     Descripción: "Connnect DB" debería ser "Connect DB" (triple n).
+    Resuelto: mongo.js corregido. Además se corrigió un segundo typo en el
+    mismo archivo: la variable "conectionString" → "connectionString".
 
 16. POST /api/mensajes - create_msj.rest no envía campos requeridos
     Archivo: requests/mensajes/create_msj.rest
