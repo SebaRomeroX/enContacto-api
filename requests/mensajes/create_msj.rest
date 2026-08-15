@@ -1,6 +1,9 @@
 POST http://localhost:3001/api/mensajes/
 Content-Type: application/json
+Authorization: Bearer <token>
 
 {
-  "mensaje": "Mas bien vienen de la DB"
+  "mensaje": "Mas bien vienen de la DB",
+  "usuarioId": "66e1c2a1b3d2c4e5f6a7b8c9",
+  "salaId": "66e1c2a1b3d2c4e5f6a7b8d0"
 }

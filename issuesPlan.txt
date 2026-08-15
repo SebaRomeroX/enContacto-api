@@ -141,10 +141,13 @@ Issues Plan - enContacto-api
     Resuelto: mongo.js corregido. Además se corrigió un segundo typo en el
     mismo archivo: la variable "conectionString" → "connectionString".
 
-16. POST /api/mensajes - create_msj.rest no envía campos requeridos
+✅ 16. POST /api/mensajes - create_msj.rest no envía campos requeridos
     Archivo: requests/mensajes/create_msj.rest
     Descripción: El modelo Mensaje espera usuarioId y salaId, pero el
     archivo .rest de prueba solo envía "mensaje".
+    Resuelto: create_msj.rest ahora envía usuarioId y salaId además de
+    mensaje, e incluye el header Authorization: Bearer <token> (el POST
+    está protegido con requireToken, #5).
 
 
 Siguientes features o posibles mejoras futuras
