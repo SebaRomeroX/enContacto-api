@@ -168,3 +168,154 @@ Siguientes features o posibles mejoras futuras
     calidad (variables sin usar, comparaciones sueltas, etc.). Considerar
     ESLint con flat config (@eslint/js) y eslint-config-prettier para
     evitar conflictos, y agregar el script "lint".
+
+
+🟣 SEGURIDAD Y AUTENTICACIÓN (pendientes)
+------------------------------------------
+
+19. Autorización por roles (RBAC) y protección de GETs
+    Archivos: controllers/*.js, utils/auth.js, models/Usuario.js
+    Descripción: Los roles ('admin','user','mod') existen en el modelo y se
+    validan como string, pero no se restringen ni se usan. Hoy cualquier
+    usuario autenticado puede borrar usuarios, salas o mensajes ajenos, y
+    los GETs quedaron públicos (#5) sin una decisión definitiva. Falta:
+    restringir 'rol' a la lista permitida, un middleware requireRole y la
+    verificación de propiedad (solo admin o el dueño del recurso) en los
+    DELETE. Definir además si los GETs pasan a privados o se mantienen
+    públicos.
+
+20. Validación de 'rol', contraseña y duplicados de nombre
+    Archivos: controllers/usuarios.js, models/Usuario.js
+    Descripción: 'rol' se valida como string pero acepta cualquier valor
+    (#8, nota). Además dos usuarios pueden compartir el mismo 'nombre', lo
+    que hace ambiguo el login (findOne). Considerar: lista permitida
+    ['admin','user','mod'], largo mínimo de 'contra' (p. ej. 6+), y un
+    índice único sobre 'nombre' para evitar duplicados.
+
+21. Protección anti-abuso general (no solo login)
+    Archivos: utils/rateLimit.js, controllers/*.js
+    Descripción: El rate limit (#7/#17) solo cubre login. Los POST de
+    mensajes/salas/usuarios y los GETs públicos no tienen límite y pueden
+    usarse para spam o abuso (crear N mensajes/salas, escanear la DB).
+    Considerar límites por recurso (p. ej. máx. X mensajes/min por usuario)
+    además del distribuido de #17.
+
+22. Refresh tokens, logout y revocación
+    Archivos: controllers/login.js, utils/auth.js
+    Descripción: El JWT dura 24 h fijas y no hay forma de invalidarlo antes
+    de la expiración (no hay logout ni lista negra). Considerar refresh
+    tokens rotativos, una colección de tokens revocados en Mongo o
+    expiración corta + refresh para reducir la ventana de exposición.
+
+23. Hardening HTTP
+    Archivos: index.js
+    Descripción: Hoy cors() acepta cualquier origen, no hay headers de
+    seguridad ni límites explícitos. Considerar: helmet (security headers),
+    restringir CORS a los orígenes del frontend, límite de tamaño de body
+    (express.json({ limit })) y longitud máxima del campo 'mensaje', y
+    sanitización del contenido de los mensajes.
+
+24. Configuración centralizada con validación al arranque (fail fast)
+    Archivo: nuevo utils/config.js (o .env-safe)
+    Descripción: TOKEN_KEY y MONGO_DB_URI se leen con process.env dispersos
+    (login.js, auth.js, mongo.js). Si faltan, la app arranca y falla en el
+    primer request. Centralizar en un módulo de config que valide las
+    variables al arrancar y falle temprano con un mensaje claro.
+
+
+🔷 MODELO DE DATOS E INTEGRIDAD (pendientes)
+---------------------------------------------
+
+25. Relaciones reales con ObjectId + populate
+    Archivos: models/Mensaje.js, controllers/mensajes.js
+    Descripción: 'usuarioId' y 'salaId' son String sueltos, sin referencia
+    real ni forma de resolver el usuario/sala al listar mensajes.
+    Considerar: tipos ObjectId con ref a Usuario/Sala y populate en
+    GET /api/mensajes para devolver nombre/foto del autor y nombre de sala.
+
+26. Filtros, GET por id y paginación
+    Archivos: controllers/*.js
+    Descripción: Los GET listan todo con find({}) sin paginar, sin filtros
+    ni detalle por id. Un chat con muchos mensajes devolverá la colección
+    completa. Considerar: ?salaId=, ?usuarioId= y ?desde=<fecha> en
+    /api/mensajes, GET /:id en los tres recursos, y paginación
+    (limit/offset o cursor por _id/fecha).
+
+27. Política de borrado e integridad referencial
+    Archivos: controllers/mensajes.js, controllers/salas.js, controllers/usuarios.js
+    Descripción: Borrar una sala o un usuario deja sus mensajes huérfanos,
+    y se pueden crear mensajes apuntando a ids inexistentes. Definir una
+    política (cascade, bloquear el borrado si tiene mensajes, o soft
+    delete) y validar que usuarioId/salaId existan al crear un mensaje.
+
+28. Timestamps y edición de recursos (PUT/PATCH)
+    Archivos: models/*.js, controllers/*.js
+    Descripción: Solo Mensaje tiene 'date'. Usuarios y salas no tienen
+    createdAt/updatedAt. Tampoco hay endpoints para actualizar: perfil
+    (nombre, foto, cambio de 'contra' verificando la anterior), nombre de
+    sala, etc. Considerar timestamps en el schema y PUT/PATCH por id.
+
+29. Funcionalidad de mensajería (tiempo real, uploads, salas)
+    Archivo: todo el proyecto
+    Descripción: La API es solo CRUD; una app de "enContacto" necesita:
+    - tiempo real (WebSockets/SSE) para mensajes en vivo, con endpoint de
+      mensajes nuevos desde una fecha;
+    - subida de imágenes (foto de perfil y adjuntos) con almacenamiento
+      (Vercel Blob/S3); hoy 'foto' es solo un string;
+    - membresía usuario-sala (invitar, unirse, salir) y listado de salas de
+      un usuario;
+    - "visto"/leído, "escribiendo…" y estado en línea.
+
+
+🟩 CALIDAD, DX Y OPERACIÓN (pendientes)
+-----------------------------------------
+
+30. Arreglar `pnpm dev`: no levanta servidor HTTP
+    Archivo: index.js
+    Descripción: El app.listen está comentado (#listo para Vercel) y solo
+    se exporta la app, por lo que `nodemon index.js` no escucha en ningún
+    puerto y los archivos .rest fallan en localhost:3001. Solución típica:
+    `if (require.main === module) { app.listen(3001, ...) }` para que funcione
+    en local sin afectar el export de Vercel. Actualizar README.
+
+31. Tests de integración y cobertura de POST
+    Archivo: test/*.test.js
+    Descripción: La suite (25 tests) cubre login y DELETEs, pero no los
+    POST exitosos ni los 400 de validación de usuarios/salas/mensajes, y
+    stubea los métodos de Mongoose en vez de tocar una DB real. Considerar
+    supertest + mongodb-memory-server (o Mongo local) y tests de cada POST.
+
+32. Limpiar build/deploy y unificar lockfile
+    Archivos: package.json, vercel.json, .gitignore
+    Descripción: 'build' es un hack que escribe un dist/index.js falso que
+    nadie usa; vercel.json declara buildCommand="pnpm install" mientras
+    package.json define vercel-build que no se invoca. Además hay dos
+    lockfiles commiteados (package-lock.json y pnpm-lock.yaml): decidir un
+    solo gestor (recomendado pnpm), borrar el otro, y simplificar el build.
+
+33. CI: GitHub Actions
+    Archivo: nuevo .github/workflows/ci.yml
+    Descripción: No hay verificación automática al hacer push/PR. Un CI con
+    `pnpm install`, `pnpm test` y `pnpm format:check` (y lint cuando exista,
+    #18) evita mergear código roto o sin formato.
+
+34. Estándar de Node y editorconfig
+    Archivos: package.json (engines), .nvmrc, .editorconfig
+    Descripción: No se declara la versión mínima de Node (engines) ni hay
+    .nvmrc/.editorconfig, así que cada dev usa lo que tiene. Fijar Node 22+
+    en engines y agregar .editorconfig alineado con Prettier.
+
+35. Observabilidad
+    Archivos: index.js, nuevo utils/logger.js
+    Descripción: Solo hay console.log/console.error y no hay health check
+    para monitorear el deploy en Vercel. Considerar: GET /api/health que
+    reporte estado de la conexión a Mongo, logging estructurado (pino) y
+    monitoreo de errores en producción (Sentry).
+
+36. Documentación de API
+    Archivos: requests/*.rest, README.md
+    Descripción: Los .rest tienen ids y tokens hardcodeados y no comparten
+    variables. Considerar definir @host/@token en las cabeceras de los
+    archivos, reemplazar los ids de ejemplo, y/o generar documentación
+    OpenAPI/Swagger. Mantener el README al día cuando se implementen los
+    puntos anteriores (endpoints, auth, roles).
