@@ -1,2 +1,2 @@
-allowBuilds:
-  bcrypt: set this to true or false
+# Configuración del workspace de pnpm
+packages: []

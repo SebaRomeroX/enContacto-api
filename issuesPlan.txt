@@ -90,10 +90,15 @@ Issues Plan - enContacto-api
    malformado; delega con next() si res ya se envió), aplicado como
    middleware final en index.js. Tests en test/errorHandler.test.js.
 
-10. pnpm-workspace.yaml inválido
+✅ 10. pnpm-workspace.yaml inválido
     Archivo: pnpm-workspace.yaml
     Descripción: Contiene el string "set this to true or false" en vez de
     un booleano real (true/false).
+    Resuelto: eliminado el bloque allowBuilds.bcrypt (placeholder huérfano
+    de cuando el proyecto usaba bcrypt; hoy solo depende de bcryptjs, sin
+    build scripts). Eliminado pnpm.onlyBuiltDependencies de package.json
+    (pnpm 11 ya no lo lee y lanzaba warning en cada comando) y quitado
+    "pnpm rebuild bcrypt" de vercel-build (bcrypt ya no es dependencia).
 
 11. Test placeholder que no testea nada
     Archivo: package.json (script "test")
