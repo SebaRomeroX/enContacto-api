@@ -8,6 +8,7 @@ const mensajesRouter = require('./controllers/mensajes')
 const usuariosRouter = require('./controllers/usuarios')
 const salasRouter = require('./controllers/salas')
 const loginRouter = require('./controllers/login')
+const { errorHandler } = require('./utils/errorHandler')
 
 
 const app = express()
@@ -37,6 +38,9 @@ app.use('/api/salas', salasRouter)
 
 // LOGIN
 app.use('/api/login', loginRouter)
+
+// MANEJO DE ERRORES GLOBAL
+app.use(errorHandler)
 
 
 

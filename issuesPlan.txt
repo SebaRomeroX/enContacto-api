@@ -80,11 +80,15 @@ Issues Plan - enContacto-api
 🟢 URGENCIA MEDIA (calidad de código)
 --------------------------------------
 
-9. Sin try-catch en handlers async
+✅ 9. Sin try-catch en handlers async
    Archivos: todos los controllers
    Descripción: Aunque Express 5 maneja rejected promises automáticamente,
    si algo falla antes de enviar response el cliente se queda colgado.
    Falta un middleware de error global.
+   Resuelto: nuevo utils/errorHandler.js (errorHandler con respuestas JSON:
+   500 genérico, 400 para CastError/ValidationError de Mongoose y body JSON
+   malformado; delega con next() si res ya se envió), aplicado como
+   middleware final en index.js. Tests en test/errorHandler.test.js.
 
 10. pnpm-workspace.yaml inválido
     Archivo: pnpm-workspace.yaml
