@@ -107,9 +107,11 @@ Issues Plan - enContacto-api
     Resuelto: script "test" ahora ejecuta el runner nativo de Node:
     "node --test test/*.test.js" (25 tests, sin dependencias nuevas).
 
-12. Falta .env.example
+✅ 12. Falta .env.example
     Descripción: No hay documentación de las variables de entorno
     requeridas (MONGO_DB_URI, TOKEN_KEY).
+    Resuelto: nuevo .env.example con ambas variables documentadas y
+    placeholders (MONGO_DB_URI para mongo.js, TOKEN_KEY para login/auth).
 
 13. Falta README
     Descripción: No hay descripción del proyecto, instrucciones de uso,
