@@ -53,13 +53,17 @@ Issues Plan - enContacto-api
    toJSON, protege GET y POST). No afecta a login, que lee user.contra del
    documento de Mongoose antes de serializar. Test en test/usuarios.test.js.
 
-7. Sin rate limiting en login
+✅ 7. Sin rate limiting en login
    Archivo: controllers/login.js
    Descripción: El endpoint POST /api/login es vulnerable a ataques de
    fuerza bruta.
    Resuelto: nuevo utils/rateLimit.js (createRateLimiter en memoria por IP,
    windowMs 15 min, max 10 intentos, 429 al exceder), aplicado en POST de
    login.js. Sin dependencias nuevas. Test en test/login.test.js.
+   Ajuste posterior: clientKey prioriza x-forwarded-for (antes usaba req.ip,
+   que sin trust proxy devolvía la IP del edge de Vercel para todos los
+   clientes), y se activó app.set('trust proxy', 1) en index.js. Test de
+   diferenciación de IPs en test/login.test.js.
    Nota: límite por instancia en memoria; en Vercel serverless no es
    compartido entre instancias (baseline, no barrera infalible).
 

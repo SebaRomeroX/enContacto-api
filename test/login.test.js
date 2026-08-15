@@ -137,4 +137,31 @@ describe('POST /api/login', () => {
       await new Promise(resolve => server.close(resolve))
     }
   })
+
+  test('429 solo afecta a la IP que excede el límite (#7)', async () => {
+    Usuario.findOne = async () => ({ _id: 'id', nombre: 'pepe', contra: 'hash' })
+    bcrypt.compare = async () => false
+
+    const { server, baseUrl } = await startServer(buildApp())
+    try {
+      const options = (ip) => ({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip },
+        body: JSON.stringify({ nombre: 'pepe', contra: 'mala' })
+      })
+
+      let last
+      for (let i = 0; i < 11; i++) {
+        last = await fetch(`${baseUrl}/api/login`, options('203.0.113.1'))
+      }
+      const blocked = await last.json()
+      assert.equal(last.status, 429)
+
+      const res = await fetch(`${baseUrl}/api/login`, options('203.0.113.2'))
+      assert.equal(res.status, 401)
+      assert.deepEqual(await res.json(), { error: 'datos incorrectos' })
+    } finally {
+      await new Promise(resolve => server.close(resolve))
+    }
+  })
 })

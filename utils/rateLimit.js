@@ -1,9 +1,6 @@
 function clientKey(req) {
-  return (
-    req.ip ||
-    req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-    'unknown'
-  )
+  const forwarded = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+  return forwarded || req.ip || 'unknown'
 }
 
 function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
