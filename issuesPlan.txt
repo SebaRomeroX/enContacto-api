@@ -226,12 +226,19 @@ Siguientes features o posibles mejoras futuras
 🔷 MODELO DE DATOS E INTEGRIDAD (pendientes)
 ---------------------------------------------
 
-25. Relaciones reales con ObjectId + populate
+✅ 25. Relaciones reales con ObjectId + populate
     Archivos: models/Mensaje.js, controllers/mensajes.js
-    Descripción: 'usuarioId' y 'salaId' son String sueltos, sin referencia
+    Descripción: 'usuarioId' y 'salaId' eran String sueltos, sin referencia
     real ni forma de resolver el usuario/sala al listar mensajes.
-    Considerar: tipos ObjectId con ref a Usuario/Sala y populate en
-    GET /api/mensajes para devolver nombre/foto del autor y nombre de sala.
+    Resuelto: models/Mensaje.js ('usuarioId' y 'salaId' ahora son
+    Schema.Types.ObjectId con ref a 'Usuario'/'Sala') y populate con select
+    en GET /api/mensajes (usuarioId → { id, nombre, foto }, salaId →
+    { id, nombre }). El select evita traer el hash 'contra'. Sin impacto
+    en tests (solo stubean findByIdAndDelete).
+    Nota: los ObjectIds no poblados se siguen serializando como string;
+    datos existentes con ObjectIds válidos castean sin problema (CastError
+    → 400 si no). La validación de existencia al crear el mensaje queda
+    para el punto 27.
 
 26. Filtros, GET por id y paginación
     Archivos: controllers/*.js

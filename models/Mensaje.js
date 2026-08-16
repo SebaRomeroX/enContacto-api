@@ -2,8 +2,8 @@ const { model, Schema } = require('mongoose')
 
 const mensajeSchema = new Schema({
   mensaje: String,
-  usuarioId: String,
-  salaId: String,
+  usuarioId: { type: Schema.Types.ObjectId, ref: 'Usuario' },
+  salaId: { type: Schema.Types.ObjectId, ref: 'Sala' },
   date: Date
 })
 
