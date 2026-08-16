@@ -277,13 +277,18 @@ Siguientes features o posibles mejoras futuras
 🟩 CALIDAD, DX Y OPERACIÓN (pendientes)
 -----------------------------------------
 
-30. Arreglar `pnpm dev`: no levanta servidor HTTP
+✅ 30. Arreglar `pnpm dev`: no levanta servidor HTTP
     Archivo: index.js
-    Descripción: El app.listen está comentado (#listo para Vercel) y solo
-    se exporta la app, por lo que `nodemon index.js` no escucha en ningún
-    puerto y los archivos .rest fallan en localhost:3001. Solución típica:
-    `if (require.main === module) { app.listen(3001, ...) }` para que funcione
-    en local sin afectar el export de Vercel. Actualizar README.
+    Descripción: El app.listen estaba comentado (#listo para Vercel) y solo
+    se exportaba la app, por lo que `nodemon index.js` no escuchaba en
+    ningún puerto y los archivos .rest fallaban en localhost:3001.
+    Resuelto: index.js usa `if (require.main === module) { app.listen(PORT
+    || 3001, ...) }` — escucha en local (pnpm dev/start) sin afectar el
+    export de Vercel, que importa la app sin abrir puerto. Actualizado
+    README.md (configuración local). Verificado con `node index.js`.
+    Nota: la conexión a Mongo falla si falta MONGO_DB_URI en .env (fail
+    en conexión, no en arranque del HTTP); el punto 24 (config fail-fast)
+    cubre ese error temprano.
 
 31. Tests de integración y cobertura de POST
     Archivo: test/*.test.js

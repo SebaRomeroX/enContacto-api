@@ -15,7 +15,7 @@ cp .env.example .env   # configurar MONGO_DB_URI y TOKEN_KEY
 pnpm dev               # o pnpm start
 ```
 
-`index.js` está preparado para Vercel (exporta la app); el `listen` local está comentado.
+`pnpm dev` (nodemon) y `pnpm start` levantan el servidor en `http://localhost:3001` (o `$PORT` si está definido). En Vercel la app se importa sin abrir puerto.
 
 ## Endpoints
 

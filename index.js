@@ -39,9 +39,12 @@ app.use('/api/login', loginRouter)
 app.use(errorHandler)
 
 // SALIDA LOCAL
-// const server = app.listen(3001, () => {
-//   console.log(`tamo ativo en ${3001}`)
-// })
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001
+  app.listen(PORT, () => {
+    console.log(`Servidor en http://localhost:${PORT}`)
+  })
+}
 
 // EXPORT PARA VERCEL
 module.exports = app
