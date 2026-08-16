@@ -317,11 +317,14 @@ Siguientes features o posibles mejoras futuras
     `pnpm install`, `pnpm test` y `pnpm format:check` (y lint cuando exista,
     #18) evita mergear código roto o sin formato.
 
-34. Estándar de Node y editorconfig
+✅ 34. Estándar de Node y editorconfig
     Archivos: package.json (engines), .nvmrc, .editorconfig
-    Descripción: No se declara la versión mínima de Node (engines) ni hay
-    .nvmrc/.editorconfig, así que cada dev usa lo que tiene. Fijar Node 22+
-    en engines y agregar .editorconfig alineado con Prettier.
+    Descripción: No se declaraba la versión mínima de Node (engines) ni
+    había .nvmrc/.editorconfig, así que cada dev usaba lo que tenía.
+    Resuelto: package.json con engines node >=22, nuevo .nvmrc (22,
+    consistente con engines) y nuevo .editorconfig alineado con Prettier
+    (utf-8, lf, espacio ×2, trim; en *.md se deja sin trim por los saltos
+    de línea). README ya documentaba Node 22+.
 
 35. Observabilidad
     Archivos: index.js, nuevo utils/logger.js
