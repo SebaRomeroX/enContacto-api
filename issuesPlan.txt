@@ -297,13 +297,19 @@ Siguientes features o posibles mejoras futuras
     stubea los métodos de Mongoose en vez de tocar una DB real. Considerar
     supertest + mongodb-memory-server (o Mongo local) y tests de cada POST.
 
-32. Limpiar build/deploy y unificar lockfile
-    Archivos: package.json, vercel.json, .gitignore
-    Descripción: 'build' es un hack que escribe un dist/index.js falso que
-    nadie usa; vercel.json declara buildCommand="pnpm install" mientras
-    package.json define vercel-build que no se invoca. Además hay dos
-    lockfiles commiteados (package-lock.json y pnpm-lock.yaml): decidir un
-    solo gestor (recomendado pnpm), borrar el otro, y simplificar el build.
+✅ 32. Limpiar build/deploy y unificar lockfile
+    Archivos: package.json, vercel.json, .gitignore, README.md
+    Descripción: 'build' era un hack que escribía un dist/index.js falso que
+    nadie usa; vercel.json declaraba buildCommand="pnpm install" mientras
+    package.json definía vercel-build que nunca se invocaba. Había dos
+    lockfiles commiteados (package-lock.json y pnpm-lock.yaml).
+    Resuelto: borrado package-lock.json (queda solo pnpm, lockfile
+    sincronizado); eliminados los scripts 'build' y 'vercel-build' de
+    package.json; vercel.json sin buildCommand/installCommand (Vercel
+    autodetecta pnpm por el lockfile y corre install --frozen-lockfile);
+    .gitignore suma dist y .vercel; README actualizado (sin paso de build).
+    Nota: 'vercel-start' se mantuvo por si algún runtime de Vercel lo usa;
+    es inofensivo con el guard require.main===module (#30).
 
 33. CI: GitHub Actions
     Archivo: nuevo .github/workflows/ci.yml

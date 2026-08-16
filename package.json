@@ -12,8 +12,6 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "vercel-start": "node index.js",
-    "vercel-build": "pnpm install --no-frozen-lockfile && pnpm run build",
-    "build": "mkdir -p dist && echo 'console.log(\"Build OK\")' > dist/index.js",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

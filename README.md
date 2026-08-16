@@ -72,7 +72,7 @@ Usa el runner nativo de Node (`node:test`), 25 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 
-`vercel.json` ya está configurado (`installCommand`, `buildCommand` y rutas). El script `vercel-build` instala dependencias y corre el build.
+`vercel.json` está configurado (`builds` con `@vercel/node` y rutas). No hay paso de build: la app exporta `app` y Vercel instala con pnpm automáticamente (detectado por `pnpm-lock.yaml`, `--frozen-lockfile`).
 
 ## Probar con REST Client
 

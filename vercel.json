@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install",
-  "installCommand": "pnpm install --no-frozen-lockfile",
   "builds": [
     {
       "src": "index.js",
