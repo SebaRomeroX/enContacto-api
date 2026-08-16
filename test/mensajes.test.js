@@ -17,6 +17,46 @@ after(async () => {
   delete process.env.TOKEN_KEY
 })
 
+describe('GET /api/mensajes', () => {
+  test('responde 200 con token válido (#19b)', async () => {
+    Mensaje.find = () => ({
+      populate() {
+        return this
+      },
+      then(resolve) {
+        resolve([{ _id: 'abc', mensaje: 'hola' }])
+      }
+    })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body[0].mensaje, 'hola')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`)
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
 describe('DELETE /api/mensajes/:id', () => {
   test('responde 204 por HTTP con token de admin (#19)', async () => {
     Mensaje.findByIdAndDelete = async () => ({})

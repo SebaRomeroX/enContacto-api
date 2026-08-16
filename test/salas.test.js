@@ -17,6 +17,39 @@ after(async () => {
   delete process.env.TOKEN_KEY
 })
 
+describe('GET /api/salas', () => {
+  test('responde 200 con token válido (#19b)', async () => {
+    Sala.find = async () => [{ _id: 'abc', nombre: 'sala1' }]
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body[0].nombre, 'sala1')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas`)
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
 describe('DELETE /api/salas/:id', () => {
   test('responde 204 por HTTP con token de admin (#19)', async () => {
     Sala.findByIdAndDelete = async () => ({})

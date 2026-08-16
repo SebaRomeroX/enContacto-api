@@ -7,7 +7,7 @@ const {
 const { requireToken, requireRole } = require('../utils/auth')
 
 // GET
-mensajesRouter.get('/', async (req, res) => {
+mensajesRouter.get('/', requireToken, async (req, res) => {
   const mensajes = await Mensaje.find({})
     .populate('usuarioId', 'nombre foto')
     .populate('salaId', 'nombre')

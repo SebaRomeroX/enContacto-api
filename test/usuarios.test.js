@@ -37,12 +37,15 @@ describe('GET /api/usuarios', () => {
         rol: 'user'
       })
     ]
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
 
     const server = app.listen(0)
     await new Promise((resolve) => server.once('listening', resolve))
     try {
       const baseUrl = `http://localhost:${server.address().port}`
-      const res = await fetch(`${baseUrl}/api/usuarios`)
+      const res = await fetch(`${baseUrl}/api/usuarios`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       const body = await res.json()
 
       assert.equal(res.status, 200)
@@ -50,6 +53,18 @@ describe('GET /api/usuarios', () => {
       assert.equal(body[0].nombre, 'pepe')
       assert.equal(body[0].contra, undefined)
       assert.equal(JSON.stringify(body).includes('hash-secreto'), false)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios`)
+      assert.equal(res.status, 401)
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }

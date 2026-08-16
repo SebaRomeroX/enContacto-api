@@ -1,0 +1,85 @@
+# Cambios necesarios en el frontend
+
+Documento de cambios en la API de enContacto que pueden romper el
+funcionamiento actual del frontend. Revisar antes de conectar la app.
+
+## 1. TODOS los endpoints requieren token (lo más importante)
+
+Ya no hay endpoints públicos. Cada petición (GET, POST o DELETE) debe
+llevar el header:
+
+```
+Authorization: Bearer <token>
+```
+
+Si no se envía el token (o es inválido/expirado), la API responde:
+
+```json
+{ "error": "token no válido" }
+```
+
+con status **401**.
+
+### Cómo obtener el token
+
+1. `POST /api/login` con `{ "nombre": "...", "contra": "..." }`.
+2. Respuesta: `{ "nombre": "...", "token": "..." }`.
+3. Guardar el `token` y mandarlo en el header `Authorization` en TODAS
+   las llamadas siguientes (incluidos los GET de usuarios, salas y
+   mensajes).
+
+El token expira a las **24 h**; al vencer, la API devuelve 401 y hay que
+volver a loguearse.
+
+## 2. Roles y permisos
+
+El token incluye el `rol` del usuario (`admin`, `user` o `mod`).
+
+- **Solo `admin` puede eliminar** usuarios, salas y mensajes
+  (`DELETE /api/usuarios/:id`, `/api/salas/:id`, `/api/mensajes/:id`).
+  Si el usuario logueado no es admin, el DELETE responde **403**:
+  `{ "error": "no autorizado para esta acción" }`.
+- **No se puede crear ni eliminar la cuenta `admin`**:
+  - `POST /api/usuarios` con `rol: "admin"` → **400**.
+  - `DELETE` sobre la cuenta admin → **403**.
+- `POST /api/usuarios` acepta `rol` solo `"user"` o `"mod"`. Si no se
+  manda `rol`, queda `"user"`.
+
+## 3. Formato de respuesta de GET /api/mensajes (populate)
+
+Desde el punto 25, `usuarioId` y `salaId` ya no vienen como ids sueltos:
+vienen resueltos (populate). Ahora son objetos:
+
+```json
+{
+  "id": "...",
+  "mensaje": "hola",
+  "usuarioId": { "id": "...", "nombre": "pepe", "foto": "..." },
+  "salaId": { "id": "...", "nombre": "sala general" },
+  "date": "2026-08-16T..."
+}
+```
+
+Si el front esperaba `usuarioId`/`salaId` como string, hay que
+actualizarlo para leer `.nombre`, `.foto`, etc. del objeto.
+
+## 4. Códigos de error a manejar
+
+| Código | Cuándo                          | Acción sugerida                              |
+| ------ | ------------------------------- | -------------------------------------------- |
+| 401    | token faltante/inválido/expirado| Re-loginear al usuario.                      |
+| 403    | sin permiso (no admin)          | Ocultar/deshabilitar acciones de borrado.    |
+| 404    | recurso no existe               | Mostrar "no encontrado".                     |
+| 429    | demasiados intentos de login    | Avisar y esperar (15 min).                   |
+| 400    | validación de campos            | Mostrar `detalles`.                          |
+
+## 5. Resumen de acciones en el front
+
+- [ ] Implementar/guardar el token de login y mandarlo en cada request.
+- [ ] Manejar 401 (token expirado → re-login).
+- [ ] Ocultar botones de borrar para usuarios que no sean `admin`
+      (o manejar el 403).
+- [ ] Ajustar la lectura de `usuarioId`/`salaId` en los mensajes al
+      nuevo formato con objetos (populate).
+- [ ] En el alta de usuarios, limitar el selector de rol a
+      `user`/`mod` (nunca `admin`).

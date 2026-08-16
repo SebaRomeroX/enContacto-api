@@ -7,7 +7,7 @@ const {
 const { requireToken, requireRole } = require('../utils/auth')
 
 // GET
-salasRouter.get('/', async (req, res) => {
+salasRouter.get('/', requireToken, async (req, res) => {
   const salas = await Sala.find({})
   res.json(salas)
 })

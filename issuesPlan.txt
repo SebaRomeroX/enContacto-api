@@ -196,11 +196,17 @@ Siguientes features o posibles mejoras futuras
     la regla "no cambiar user→admin" se refuerza cuando existan PUT/PATCH
     (#28). Protección de GETs pasó al punto 19b.
 
-19b. Decisión/protección de GETs (pendiente)
-    Archivos: controllers/*.js, requests/*.rest, README.md
-    Descripción: Los GET de /api/usuarios, /api/salas y /api/mensajes
-    siguen públicos. Decidir si pasan a privados (requireToken) o se
-    mantienen públicos, y actualizar .rest/README/tests en consecuencia.
+✅ 19b. Decisión/protección de GETs
+    Archivos: controllers/usuarios.js, controllers/salas.js,
+    controllers/mensajes.js, requests/*/get_*.rest, README.md
+    Descripción: Los GET de /api/usuarios, /api/salas y /api/mensajes eran
+    públicos.
+    Resuelto: decisión = privados. Los tres GET ahora llevan requireToken
+    (401 sin token; cualquier usuario logueado, sin importar el rol). Los
+    .rest de lectura (get_users/get_salas/get_msj) incluyen Authorization:
+    Bearer <token>, y README refleja que todos los endpoints requieren
+    token. Tests ampliados (43 en total) con 200 con token y 401 sin token.
+    Nota: cambios para el frontend documentados en cambiosNecesarios.txt.
 
 20. Validación de 'rol', contraseña y duplicados de nombre
     Archivos: controllers/usuarios.js, models/Usuario.js
@@ -310,7 +316,7 @@ Siguientes features o posibles mejoras futuras
 
 31. Tests de integración y cobertura de POST
     Archivo: test/*.test.js
-    Descripción: La suite (38 tests) cubre login y DELETEs, pero no los
+    Descripción: La suite (43 tests) cubre login y DELETEs, pero no los
     POST exitosos ni los 400 de validación de usuarios/salas/mensajes, y
     stubea los métodos de Mongoose en vez de tocar una DB real. Considerar
     supertest + mongodb-memory-server (o Mongo local) y tests de cada POST.

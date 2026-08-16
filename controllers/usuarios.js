@@ -10,7 +10,7 @@ const { requireToken, requireRole } = require('../utils/auth')
 const ROLES_PERMITIDOS_CREACION = ['user', 'mod']
 
 // GET
-usuariosRouter.get('/', async (req, res) => {
+usuariosRouter.get('/', requireToken, async (req, res) => {
   const usuarios = await Usuario.find({})
   res.json(usuarios)
 })

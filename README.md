@@ -19,7 +19,7 @@ pnpm dev               # o pnpm start
 
 ## Endpoints
 
-Auth: header `Authorization: Bearer <token>` (expiración 24 h). Los GET quedaron públicos a propósito por ahora.
+Auth: header `Authorization: Bearer <token>` (expiración 24 h). Todos los endpoints (GET, POST y DELETE) requieren el token; sin él la API responde `401`.
 
 ### Roles
 
@@ -35,7 +35,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 | Método | Ruta                | Auth                | Body                                | Descripción                                                                                         |
 | ------ | ------------------- | ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------- |
-| GET    | `/api/usuarios`     | no                  | —                                   | Lista usuarios (no expone `contra`).                                                                |
+| GET    | `/api/usuarios`     | Bearer              | —                                   | Lista usuarios (no expone `contra`).                                                                |
 | POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
 | DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                      |
 
@@ -43,7 +43,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 | Método | Ruta             | Auth                | Body      | Descripción   |
 | ------ | ---------------- | ------------------- | --------- | ------------- |
-| GET    | `/api/salas`     | no                  | —         | Lista salas.  |
+| GET    | `/api/salas`     | Bearer              | —         | Lista salas.  |
 | POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.    |
 | DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala. |
 
@@ -51,7 +51,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 | Método | Ruta                | Auth                | Body                                | Descripción                           |
 | ------ | ------------------- | ------------------- | ----------------------------------- | ------------------------------------- |
-| GET    | `/api/mensajes`     | no                  | —                                   | Lista mensajes.                       |
+| GET    | `/api/mensajes`     | Bearer              | —                                   | Lista mensajes.                       |
 | POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo). |
 | DELETE | `/api/mensajes/:id` | Bearer (solo admin) | —                                   | Elimina mensaje.                      |
 
@@ -74,7 +74,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 38 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 43 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 
