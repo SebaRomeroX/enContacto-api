@@ -4,7 +4,7 @@ const usuarioSchema = new Schema({
   foto: String,
   nombre: String,
   contra: String,
-  rol: String
+  rol: { type: String, enum: ['admin', 'user', 'mod'], default: 'user' }
 })
 
 usuarioSchema.set('toJSON', {

@@ -18,4 +18,13 @@ function requireToken(req, res, next) {
   }
 }
 
-module.exports = { requireToken }
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.rol)) {
+      return res.status(403).json({ error: 'no autorizado para esta acción' })
+    }
+    next()
+  }
+}
+
+module.exports = { requireToken, requireRole }

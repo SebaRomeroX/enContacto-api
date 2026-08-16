@@ -18,9 +18,12 @@ after(async () => {
 })
 
 describe('DELETE /api/mensajes/:id', () => {
-  test('responde 204 por HTTP con token válido', async () => {
+  test('responde 204 por HTTP con token de admin (#19)', async () => {
     Mensaje.findByIdAndDelete = async () => ({})
-    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
 
     const server = app.listen(0)
     await new Promise((resolve) => server.once('listening', resolve))
@@ -31,6 +34,27 @@ describe('DELETE /api/mensajes/:id', () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       assert.equal(res.status, 204)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 403 si el token no es de admin (#19)', async () => {
+    Mensaje.findByIdAndDelete = async () => ({})
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'pepe', rol: 'user' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes/abc123`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 403)
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }

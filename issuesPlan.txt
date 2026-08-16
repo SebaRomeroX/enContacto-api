@@ -173,16 +173,34 @@ Siguientes features o posibles mejoras futuras
 🟣 SEGURIDAD Y AUTENTICACIÓN (pendientes)
 ------------------------------------------
 
-19. Autorización por roles (RBAC) y protección de GETs
-    Archivos: controllers/*.js, utils/auth.js, models/Usuario.js
-    Descripción: Los roles ('admin','user','mod') existen en el modelo y se
-    validan como string, pero no se restringen ni se usan. Hoy cualquier
-    usuario autenticado puede borrar usuarios, salas o mensajes ajenos, y
-    los GETs quedaron públicos (#5) sin una decisión definitiva. Falta:
-    restringir 'rol' a la lista permitida, un middleware requireRole y la
-    verificación de propiedad (solo admin o el dueño del recurso) en los
-    DELETE. Definir además si los GETs pasan a privados o se mantienen
-    públicos.
+✅ 19. Autorización por roles (RBAC)
+    Archivos: controllers/*.js, utils/auth.js, models/Usuario.js,
+    controllers/login.js, README.md
+    Descripción: Los roles ('admin','user','mod') existían en el modelo pero
+    no se restringían ni se usaban; cualquier usuario autenticado podía
+    borrar lo que quisiera. Decisión: solo existe UNA cuenta admin (no se
+    puede crear ni borrar), y solo admin puede eliminar.
+    Resuelto: nuevo middleware requireRole(...roles) en utils/auth.js
+    (403 si el rol del token no está en la lista); el token JWT ahora
+    incluye 'rol' (login.js); schema de Usuario con enum + default 'user';
+    POST /api/usuarios solo admite rol 'user'/'mod' (default 'user'),
+    'admin' → 400; DELETE de usuarios/salas/mensajes protegido con
+    requireRole('admin'); DELETE de usuarios además no permite borrar al
+    admin (403) y responde 404 si no existe. README documenta roles, 403 y
+    404. Tests ampliados (38 en total).
+    Notas: el rol queda fijado en el token hasta re-login (24 h) — si se
+    implementan cambios de rol (#28) habrá que re-loginear o refrescar.
+    La whitelist de 'rol' cubre esa parte de #20 (quedan para #20: largo
+    mínimo de 'contra' e índice único de 'nombre'). La verificación de
+    propiedad por dueño del recurso se descartó (DELETE es admin-only);
+    la regla "no cambiar user→admin" se refuerza cuando existan PUT/PATCH
+    (#28). Protección de GETs pasó al punto 19b.
+
+19b. Decisión/protección de GETs (pendiente)
+    Archivos: controllers/*.js, requests/*.rest, README.md
+    Descripción: Los GET de /api/usuarios, /api/salas y /api/mensajes
+    siguen públicos. Decidir si pasan a privados (requireToken) o se
+    mantienen públicos, y actualizar .rest/README/tests en consecuencia.
 
 20. Validación de 'rol', contraseña y duplicados de nombre
     Archivos: controllers/usuarios.js, models/Usuario.js
@@ -292,7 +310,7 @@ Siguientes features o posibles mejoras futuras
 
 31. Tests de integración y cobertura de POST
     Archivo: test/*.test.js
-    Descripción: La suite (25 tests) cubre login y DELETEs, pero no los
+    Descripción: La suite (38 tests) cubre login y DELETEs, pero no los
     POST exitosos ni los 400 de validación de usuarios/salas/mensajes, y
     stubea los métodos de Mongoose en vez de tocar una DB real. Considerar
     supertest + mongodb-memory-server (o Mongo local) y tests de cada POST.

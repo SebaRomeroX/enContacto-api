@@ -101,6 +101,7 @@ describe('POST /api/login', () => {
     Usuario.findOne = async () => ({
       _id: 'abc',
       nombre: 'pepe',
+      rol: 'mod',
       contra: 'hash'
     })
     bcrypt.compare = async () => true
@@ -117,6 +118,31 @@ describe('POST /api/login', () => {
       assert.equal(res.status, 200)
       assert.equal(body.nombre, 'pepe')
       assert.equal(body.token, 'token-de-prueba')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('el token firmado incluye el rol del usuario (#19)', async () => {
+    jwt.sign = originalSign
+    Usuario.findOne = async () => ({
+      _id: 'abc',
+      nombre: 'pepe',
+      rol: 'mod',
+      contra: 'hash'
+    })
+    bcrypt.compare = async () => true
+
+    const { server, baseUrl } = await startServer(buildApp())
+    try {
+      const res = await fetch(`${baseUrl}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: 'pepe', contra: 'buena' })
+      })
+      const body = await res.json()
+      const decoded = jwt.decode(body.token)
+      assert.equal(decoded.rol, 'mod')
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }

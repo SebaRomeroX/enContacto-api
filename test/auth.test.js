@@ -2,7 +2,7 @@ const { test, describe, beforeEach, after } = require('node:test')
 const assert = require('node:assert/strict')
 const jwt = require('jsonwebtoken')
 
-const { requireToken } = require('../utils/auth')
+const { requireToken, requireRole } = require('../utils/auth')
 
 beforeEach(() => {
   process.env.TOKEN_KEY = 'test-token-key'
@@ -69,5 +69,57 @@ describe('requireToken', () => {
     assert.equal(nextCalled, true)
     assert.equal(req.user.id, 'user1')
     assert.equal(req.user.nombre, 'pepe')
+  })
+})
+
+describe('requireRole', () => {
+  function callRoleMiddleware(reqUser) {
+    const req = { user: reqUser }
+    let statusCode = null
+    let sentBody = null
+    let nextCalled = false
+
+    const res = {
+      status(code) {
+        statusCode = code
+        return this
+      },
+      json(body) {
+        sentBody = body
+      }
+    }
+    const next = () => {
+      nextCalled = true
+    }
+
+    const middleware = requireRole('admin')
+    middleware(req, res, next)
+
+    return { statusCode, sentBody, nextCalled }
+  }
+
+  test('devuelve 403 si el usuario no tiene el rol requerido', () => {
+    const { statusCode, sentBody, nextCalled } = callRoleMiddleware({
+      id: 'u1',
+      rol: 'user'
+    })
+    assert.equal(statusCode, 403)
+    assert.equal(sentBody.error, 'no autorizado para esta acción')
+    assert.equal(nextCalled, false)
+  })
+
+  test('devuelve 403 si req.user no existe', () => {
+    const { statusCode, nextCalled } = callRoleMiddleware(undefined)
+    assert.equal(statusCode, 403)
+    assert.equal(nextCalled, false)
+  })
+
+  test('llama a next() si el usuario tiene el rol requerido', () => {
+    const { statusCode, nextCalled } = callRoleMiddleware({
+      id: 'u1',
+      rol: 'admin'
+    })
+    assert.equal(statusCode, null)
+    assert.equal(nextCalled, true)
   })
 })

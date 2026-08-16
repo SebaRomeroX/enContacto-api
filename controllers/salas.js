@@ -4,7 +4,7 @@ const {
   validateRequiredStringFields,
   sendValidationError
 } = require('../utils/validation')
-const { requireToken } = require('../utils/auth')
+const { requireToken, requireRole } = require('../utils/auth')
 
 // GET
 salasRouter.get('/', async (req, res) => {
@@ -30,11 +30,16 @@ salasRouter.post('/', requireToken, async (req, res) => {
 })
 
 // DELETE
-salasRouter.delete('/:id', requireToken, async (req, res) => {
-  const { id } = req.params
+salasRouter.delete(
+  '/:id',
+  requireToken,
+  requireRole('admin'),
+  async (req, res) => {
+    const { id } = req.params
 
-  await Sala.findByIdAndDelete(id)
-  res.status(204).end()
-})
+    await Sala.findByIdAndDelete(id)
+    res.status(204).end()
+  }
+)
 
 module.exports = salasRouter

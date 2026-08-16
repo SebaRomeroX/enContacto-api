@@ -36,7 +36,8 @@ loginRouter.post(
 
     const userForToken = {
       id: user._id,
-      nombre: user.nombre
+      nombre: user.nombre,
+      rol: user.rol
     }
     const token = jwt.sign(userForToken, process.env.TOKEN_KEY, {
       expiresIn: 60 * 60 * 24

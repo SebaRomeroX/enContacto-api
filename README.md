@@ -21,6 +21,10 @@ pnpm dev               # o pnpm start
 
 Auth: header `Authorization: Bearer <token>` (expiración 24 h). Los GET quedaron públicos a propósito por ahora.
 
+### Roles
+
+Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (no se puede crear ni eliminar), y **solo `admin` puede eliminar** salas, usuarios y mensajes. El token incluye el `rol`; si un usuario cambia de rol debe volver a loguearse (el rol queda fijado en el token por 24 h).
+
 ### Login
 
 | Método | Ruta         | Auth | Body               | Descripción                                                     |
@@ -29,27 +33,27 @@ Auth: header `Authorization: Bearer <token>` (expiración 24 h). Los GET quedaro
 
 ### Usuarios
 
-| Método | Ruta                | Auth   | Body                                | Descripción                                |
-| ------ | ------------------- | ------ | ----------------------------------- | ------------------------------------------ |
-| GET    | `/api/usuarios`     | no     | —                                   | Lista usuarios (no expone `contra`).       |
-| POST   | `/api/usuarios`     | Bearer | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada con bcrypt). |
-| DELETE | `/api/usuarios/:id` | Bearer | —                                   | Elimina usuario.                           |
+| Método | Ruta                | Auth                | Body                                | Descripción                                                                                         |
+| ------ | ------------------- | ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------- |
+| GET    | `/api/usuarios`     | no                  | —                                   | Lista usuarios (no expone `contra`).                                                                |
+| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
+| DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                      |
 
 ### Salas
 
-| Método | Ruta             | Auth   | Body      | Descripción   |
-| ------ | ---------------- | ------ | --------- | ------------- |
-| GET    | `/api/salas`     | no     | —         | Lista salas.  |
-| POST   | `/api/salas`     | Bearer | `nombre`* | Crea sala.    |
-| DELETE | `/api/salas/:id` | Bearer | —         | Elimina sala. |
+| Método | Ruta             | Auth                | Body      | Descripción   |
+| ------ | ---------------- | ------------------- | --------- | ------------- |
+| GET    | `/api/salas`     | no                  | —         | Lista salas.  |
+| POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.    |
+| DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala. |
 
 ### Mensajes
 
-| Método | Ruta                | Auth   | Body                                | Descripción                           |
-| ------ | ------------------- | ------ | ----------------------------------- | ------------------------------------- |
-| GET    | `/api/mensajes`     | no     | —                                   | Lista mensajes.                       |
-| POST   | `/api/mensajes`     | Bearer | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo). |
-| DELETE | `/api/mensajes/:id` | Bearer | —                                   | Elimina mensaje.                      |
+| Método | Ruta                | Auth                | Body                                | Descripción                           |
+| ------ | ------------------- | ------------------- | ----------------------------------- | ------------------------------------- |
+| GET    | `/api/mensajes`     | no                  | —                                   | Lista mensajes.                       |
+| POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo). |
+| DELETE | `/api/mensajes/:id` | Bearer (solo admin) | —                                   | Elimina mensaje.                      |
 
 \* obligatorio.
 
@@ -59,6 +63,8 @@ Respuestas JSON con `{ error, detalles? }`:
 
 - `400` — solicitud inválida (validación de campos, id inválido, JSON malformado)
 - `401` — token o credenciales inválidos
+- `403` — sin permiso (rol insuficiente, p. ej. borrar sin ser admin o borrar la cuenta admin)
+- `404` — recurso no encontrado
 - `429` — demasiados intentos (rate limit de login)
 - `500` — error interno del servidor
 
@@ -68,7 +74,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 25 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 38 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

@@ -4,7 +4,7 @@ const {
   validateRequiredStringFields,
   sendValidationError
 } = require('../utils/validation')
-const { requireToken } = require('../utils/auth')
+const { requireToken, requireRole } = require('../utils/auth')
 
 // GET
 mensajesRouter.get('/', async (req, res) => {
@@ -39,11 +39,16 @@ mensajesRouter.post('/', requireToken, async (req, res) => {
 })
 
 // DELETE
-mensajesRouter.delete('/:id', requireToken, async (req, res) => {
-  const { id } = req.params
+mensajesRouter.delete(
+  '/:id',
+  requireToken,
+  requireRole('admin'),
+  async (req, res) => {
+    const { id } = req.params
 
-  await Mensaje.findByIdAndDelete(id)
-  res.status(204).end()
-})
+    await Mensaje.findByIdAndDelete(id)
+    res.status(204).end()
+  }
+)
 
 module.exports = mensajesRouter
