@@ -33,11 +33,11 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 ### Usuarios
 
-| Método | Ruta                | Auth                | Body                                | Descripción                                                                                         |
-| ------ | ------------------- | ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------- |
-| GET    | `/api/usuarios`     | Bearer              | —                                   | Lista usuarios (no expone `contra`).                                                                |
-| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
-| DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                      |
+| Método | Ruta                | Auth                | Body                                | Descripción                                                                                                            |
+| ------ | ------------------- | ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/usuarios`     | Bearer              | —                                   | Lista usuarios (no expone `contra`).                                                                                   |
+| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada, mín. 6 caracteres). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
+| DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                                         |
 
 ### Salas
 
@@ -74,7 +74,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 43 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 44 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

@@ -97,6 +97,15 @@ describe('POST /api/usuarios', () => {
     }
   }
 
+  test('responde 400 si la contraseña tiene menos de 6 caracteres (#20)', async () => {
+    const { status, body } = await postUsuario(
+      { nombre: 'otro', contra: 'corta' },
+      'admin'
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('contra')))
+  })
+
   test('responde 400 si intenta crear una cuenta admin (#19)', async () => {
     const { status, body } = await postUsuario(
       { nombre: 'otro', contra: 'secreto', rol: 'admin' },

@@ -23,6 +23,9 @@ usuariosRouter.post('/', requireToken, async (req, res) => {
     'nombre',
     'contra'
   ])
+  if (typeof contra === 'string' && contra.trim().length < 6) {
+    validationErrors.push("campo 'contra' debe tener al menos 6 caracteres")
+  }
   if (rol === 'admin') {
     validationErrors.push(
       `campo 'rol' no puede ser 'admin' (solo puede existir una cuenta admin)`
