@@ -15,7 +15,7 @@ cp .env.example .env   # configurar MONGO_DB_URI y TOKEN_KEY
 pnpm dev               # o pnpm start
 ```
 
-`pnpm dev` (nodemon) y `pnpm start` levantan el servidor en `http://localhost:3001` (o `$PORT` si está definido). En Vercel la app se importa sin abrir puerto.
+`pnpm dev` (nodemon) y `pnpm start` levantan el servidor en `http://localhost:3001` (o `$PORT` si está definido). En Vercel la app se importa sin abrir puerto. Si faltan `TOKEN_KEY` o `MONGO_DB_URI`, la app **aborta al arrancar** con un mensaje claro (fail fast).
 
 ## Endpoints
 
@@ -87,7 +87,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 52 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 57 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const { getTokenKey } = require('./config')
 
 function requireToken(req, res, next) {
   const authorization = req.get('authorization')
@@ -10,7 +11,7 @@ function requireToken(req, res, next) {
   const token = authorization.substring(7)
 
   try {
-    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY)
+    const decodedToken = jwt.verify(token, getTokenKey())
     req.user = decodedToken
     next()
   } catch {

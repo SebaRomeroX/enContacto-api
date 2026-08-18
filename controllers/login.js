@@ -7,6 +7,7 @@ const {
   sendValidationError
 } = require('../utils/validation')
 const { createRateLimiter } = require('../utils/rateLimit')
+const { getTokenKey } = require('../utils/config')
 
 loginRouter.post(
   '/',
@@ -39,7 +40,7 @@ loginRouter.post(
       nombre: user.nombre,
       rol: user.rol
     }
-    const token = jwt.sign(userForToken, process.env.TOKEN_KEY, {
+    const token = jwt.sign(userForToken, getTokenKey(), {
       expiresIn: 60 * 60 * 24
     })
 

@@ -1,4 +1,6 @@
 require('dotenv').config()
+const { getPort, validateEnv } = require('./utils/config')
+validateEnv()
 require('./mongo')
 
 const express = require('express')
@@ -40,9 +42,8 @@ app.use(errorHandler)
 
 // SALIDA LOCAL
 if (require.main === module) {
-  const PORT = process.env.PORT || 3001
-  app.listen(PORT, () => {
-    console.log(`Servidor en http://localhost:${PORT}`)
+  app.listen(getPort(), () => {
+    console.log(`Servidor en http://localhost:${getPort()}`)
   })
 }
 

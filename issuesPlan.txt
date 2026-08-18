@@ -257,6 +257,14 @@ Siguientes features o posibles mejoras futuras
     (login.js, auth.js, mongo.js). Si faltan, la app arranca y falla en el
     primer request. Centralizar en un módulo de config que valide las
     variables al arrancar y falle temprano con un mensaje claro.
+    Resuelto: nuevo utils/config.js con getters perezosos (getTokenKey,
+    getMongoDbUri, getPort) y validateEnv() que lanza listando las vars
+    faltantes. validateEnv() se llama en index.js tras dotenv (fail fast
+    al arrancar, antes de conectar Mongo). login.js, auth.js y mongo.js
+    usan los getters; PORT también queda centralizado en index.js.
+    Los getters leen process.env en cada llamada para no romper los tests
+    (que setean TOKEN_KEY en beforeEach). Tests en test/config.test.js
+    (57 en total).
 
 
 🔷 MODELO DE DATOS E INTEGRIDAD (pendientes)
