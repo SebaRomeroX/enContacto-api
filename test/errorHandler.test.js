@@ -62,6 +62,20 @@ describe('errorHandler', () => {
     assert.deepEqual(body.detalles, ["campo 'nombre' es inválido"])
   })
 
+  test('responde 400 ante un índice único duplicado (code 11000) (#20)', async () => {
+    const error = new Error('E11000 duplicate key')
+    error.code = 11000
+    error.keyPattern = { nombre: 1 }
+    const app = buildApp(() => {
+      throw error
+    })
+    const res = await request(app, '/boom')
+    const body = await res.json()
+    assert.equal(res.status, 400)
+    assert.equal(body.error, 'solicitud inválida')
+    assert.ok(body.detalles.some((d) => d.includes('nombre')))
+  })
+
   test('responde 400 ante JSON malformado (#9)', async () => {
     const app = buildApp(async () => ({ ok: true }))
     const res = await request(app, '/boom', {

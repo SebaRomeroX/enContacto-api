@@ -2,7 +2,7 @@ const { model, Schema } = require('mongoose')
 
 const usuarioSchema = new Schema({
   foto: String,
-  nombre: String,
+  nombre: { type: String, unique: true },
   contra: String,
   rol: { type: String, enum: ['admin', 'user', 'mod'], default: 'user' }
 })

@@ -190,8 +190,8 @@ Siguientes features o posibles mejoras futuras
     404. Tests ampliados (38 en total).
     Notas: el rol queda fijado en el token hasta re-login (24 h) — si se
     implementan cambios de rol (#28) habrá que re-loginear o refrescar.
-    La whitelist de 'rol' cubre esa parte de #20 (quedan para #20: largo
-    mínimo de 'contra' e índice único de 'nombre'). La verificación de
+    La whitelist de 'rol' cubre esa parte de #20 (largo mínimo de 'contra'
+    e índice único de 'nombre' quedaron para #20, ya resueltos). La verificación de
     propiedad por dueño del recurso se descartó (DELETE es admin-only);
     la regla "no cambiar user→admin" se refuerza cuando existan PUT/PATCH
     (#28). Protección de GETs pasó al punto 19b.
@@ -215,6 +215,11 @@ Siguientes features o posibles mejoras futuras
     que hace ambiguo el login (findOne). Considerar: lista permitida
     ['admin','user','mod'], largo mínimo de 'contra' (p. ej. 6+), y un
     índice único sobre 'nombre' para evitar duplicados.
+    Resuelto: whitelist de 'rol' cubierta en #19; largo mínimo de 'contra'
+    (6+) validado en POST /api/usuarios (controllers/usuarios.js); índice
+    único sobre 'nombre' en models/Usuario.js y manejo del error 11000 en
+    utils/errorHandler.js (400 "el campo 'nombre' ya está en uso"). Tests
+    en test/usuarios.test.js y test/errorHandler.test.js (46 en total).
 
 21. Protección anti-abuso general (no solo login)
     Archivos: utils/rateLimit.js, controllers/*.js

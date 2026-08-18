@@ -24,6 +24,15 @@ function errorHandler(error, req, res, next) {
     })
   }
 
+  if (error.code === 11000) {
+    return res.status(400).json({
+      error: 'solicitud inválida',
+      detalles: [
+        `el campo '${Object.keys(error.keyPattern)[0]}' ya está en uso`
+      ]
+    })
+  }
+
   res.status(500).json({
     error: 'error interno del servidor'
   })

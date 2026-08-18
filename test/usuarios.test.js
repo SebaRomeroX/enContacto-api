@@ -13,6 +13,7 @@ const originalHash = bcrypt.hash
 const app = require('express')()
 app.use(require('express').json())
 app.use('/api/usuarios', require('../controllers/usuarios'))
+app.use(require('../utils/errorHandler').errorHandler)
 
 beforeEach(() => {
   process.env.TOKEN_KEY = 'test-token-key'
@@ -96,6 +97,22 @@ describe('POST /api/usuarios', () => {
       await new Promise((resolve) => server.close(resolve))
     }
   }
+
+  test('responde 400 si el nombre ya está en uso (#20)', async () => {
+    Usuario.prototype.save = async () => {
+      const error = new Error('E11000 duplicate key')
+      error.code = 11000
+      error.keyPattern = { nombre: 1 }
+      throw error
+    }
+
+    const { status, body } = await postUsuario(
+      { nombre: 'pepe', contra: 'secreto' },
+      'admin'
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('nombre')))
+  })
 
   test('responde 400 si la contraseña tiene menos de 6 caracteres (#20)', async () => {
     const { status, body } = await postUsuario(
