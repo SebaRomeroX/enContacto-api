@@ -57,6 +57,19 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 \* obligatorio.
 
+## Rate limits
+
+Límites en memoria por instancia (no compartidos entre instancias serverless):
+
+| Endpoint             | Límite                        |
+| -------------------- | ----------------------------- |
+| `POST /api/login`    | 10 intentos / 15 min (por IP) |
+| `POST /api/mensajes` | 30 / min (por usuario)        |
+| `POST /api/salas`    | 10 / min (por usuario)        |
+| `POST /api/usuarios` | 10 / min (por usuario)        |
+
+Al exceder el límite, la API responde `429`.
+
 ## Errores
 
 Respuestas JSON con `{ error, detalles? }`:
@@ -74,7 +87,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 46 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 52 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

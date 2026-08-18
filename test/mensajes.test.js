@@ -6,6 +6,7 @@ const Mensaje = require('../models/Mensaje')
 const originalFindByIdAndDelete = Mensaje.findByIdAndDelete
 
 const app = require('express')()
+app.use(require('express').json())
 app.use('/api/mensajes', require('../controllers/mensajes'))
 
 beforeEach(() => {
@@ -51,6 +52,76 @@ describe('GET /api/mensajes', () => {
       const baseUrl = `http://localhost:${server.address().port}`
       const res = await fetch(`${baseUrl}/api/mensajes`)
       assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('POST /api/mensajes', () => {
+  test('crea mensaje con token válido (#21)', async () => {
+    Mensaje.prototype.save = async function () {
+      return this
+    }
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.mensaje, 'hola')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 429 al exceder el límite de POSTs (#21)', async () => {
+    Mensaje.prototype.save = async function () {
+      return this
+    }
+    const token = jwt.sign(
+      { id: 'rl-user', nombre: 'spammer' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      }
+
+      let last
+      for (let i = 0; i < 31; i++) {
+        last = await fetch(`${baseUrl}/api/mensajes`, options)
+      }
+      const body = await last.json()
+      assert.equal(last.status, 429)
+      assert.equal(body.error, 'demasiados intentos, intente más tarde')
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }

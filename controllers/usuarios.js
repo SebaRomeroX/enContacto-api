@@ -6,8 +6,15 @@ const {
   sendValidationError
 } = require('../utils/validation')
 const { requireToken, requireRole } = require('../utils/auth')
+const { createRateLimiter } = require('../utils/rateLimit')
 
 const ROLES_PERMITIDOS_CREACION = ['user', 'mod']
+
+const limiterUsuarios = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyBy: (req) => req.user?.id
+})
 
 // GET
 usuariosRouter.get('/', requireToken, async (req, res) => {
@@ -16,7 +23,7 @@ usuariosRouter.get('/', requireToken, async (req, res) => {
 })
 
 // POST
-usuariosRouter.post('/', requireToken, async (req, res) => {
+usuariosRouter.post('/', requireToken, limiterUsuarios, async (req, res) => {
   const { foto, nombre, contra, rol } = req.body
 
   const validationErrors = validateRequiredStringFields(req.body, [

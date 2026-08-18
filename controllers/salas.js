@@ -5,6 +5,13 @@ const {
   sendValidationError
 } = require('../utils/validation')
 const { requireToken, requireRole } = require('../utils/auth')
+const { createRateLimiter } = require('../utils/rateLimit')
+
+const limiterSalas = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyBy: (req) => req.user?.id
+})
 
 // GET
 salasRouter.get('/', requireToken, async (req, res) => {
@@ -13,7 +20,7 @@ salasRouter.get('/', requireToken, async (req, res) => {
 })
 
 // POST
-salasRouter.post('/', requireToken, async (req, res) => {
+salasRouter.post('/', requireToken, limiterSalas, async (req, res) => {
   const { nombre } = req.body
 
   const validationErrors = validateRequiredStringFields(req.body, ['nombre'])

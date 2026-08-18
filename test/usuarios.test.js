@@ -168,6 +168,76 @@ describe('POST /api/usuarios', () => {
     assert.equal(status, 200)
     assert.equal(body.rol, 'user')
   })
+
+  test('responde 429 al exceder el límite de POSTs (#21)', async () => {
+    Usuario.prototype.save = async function () {
+      return this
+    }
+    bcrypt.hash = async () => 'hash'
+    const token = jwt.sign(
+      { id: 'rl-user', nombre: 'spammer', rol: 'user' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ nombre: 'otro', contra: 'secreto' })
+      }
+
+      let last
+      for (let i = 0; i < 11; i++) {
+        last = await fetch(`${baseUrl}/api/usuarios`, options)
+      }
+      const body = await last.json()
+      assert.equal(last.status, 429)
+      assert.equal(body.error, 'demasiados intentos, intente más tarde')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('429 solo bloquea al usuario que excede el límite (#21)', async () => {
+    Usuario.prototype.save = async function () {
+      return this
+    }
+    bcrypt.hash = async () => 'hash'
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const options = (userId) => ({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt.sign(
+            { id: userId, nombre: 'x', rol: 'user' },
+            process.env.TOKEN_KEY
+          )}`
+        },
+        body: JSON.stringify({ nombre: 'otro', contra: 'secreto' })
+      })
+
+      let last
+      for (let i = 0; i < 11; i++) {
+        last = await fetch(`${baseUrl}/api/usuarios`, options('rl-user'))
+      }
+      assert.equal(last.status, 429)
+
+      const res = await fetch(`${baseUrl}/api/usuarios`, options('otro-user'))
+      assert.equal(res.status, 200)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
 })
 
 describe('DELETE /api/usuarios/:id', () => {

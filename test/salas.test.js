@@ -6,6 +6,7 @@ const Sala = require('../models/Sala')
 const originalFindByIdAndDelete = Sala.findByIdAndDelete
 
 const app = require('express')()
+app.use(require('express').json())
 app.use('/api/salas', require('../controllers/salas'))
 
 beforeEach(() => {
@@ -44,6 +45,68 @@ describe('GET /api/salas', () => {
       const baseUrl = `http://localhost:${server.address().port}`
       const res = await fetch(`${baseUrl}/api/salas`)
       assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('POST /api/salas', () => {
+  test('crea sala con token válido (#21)', async () => {
+    Sala.prototype.save = async function () {
+      return this
+    }
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ nombre: 'sala nueva' })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.nombre, 'sala nueva')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 429 al exceder el límite de POSTs (#21)', async () => {
+    Sala.prototype.save = async function () {
+      return this
+    }
+    const token = jwt.sign(
+      { id: 'rl-user', nombre: 'spammer' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ nombre: 'sala nueva' })
+      }
+
+      let last
+      for (let i = 0; i < 11; i++) {
+        last = await fetch(`${baseUrl}/api/salas`, options)
+      }
+      const body = await last.json()
+      assert.equal(last.status, 429)
+      assert.equal(body.error, 'demasiados intentos, intente más tarde')
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }

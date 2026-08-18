@@ -5,6 +5,13 @@ const {
   sendValidationError
 } = require('../utils/validation')
 const { requireToken, requireRole } = require('../utils/auth')
+const { createRateLimiter } = require('../utils/rateLimit')
+
+const limiterMensajes = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyBy: (req) => req.user?.id
+})
 
 // GET
 mensajesRouter.get('/', requireToken, async (req, res) => {
@@ -15,7 +22,7 @@ mensajesRouter.get('/', requireToken, async (req, res) => {
 })
 
 // POST
-mensajesRouter.post('/', requireToken, async (req, res) => {
+mensajesRouter.post('/', requireToken, limiterMensajes, async (req, res) => {
   const { mensaje, usuarioId, salaId } = req.body
 
   const validationErrors = validateRequiredStringFields(req.body, [

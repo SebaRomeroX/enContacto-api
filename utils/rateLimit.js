@@ -3,7 +3,11 @@ function clientKey(req) {
   return forwarded || req.ip || 'unknown'
 }
 
-function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
+function createRateLimiter({
+  windowMs = 15 * 60 * 1000,
+  max = 10,
+  keyBy = clientKey
+} = {}) {
   const hits = new Map()
 
   function prune(now) {
@@ -18,7 +22,7 @@ function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
     const now = Date.now()
     prune(now)
 
-    const key = clientKey(req)
+    const key = keyBy(req) || clientKey(req)
     const entry = hits.get(key)
 
     if (!entry) {

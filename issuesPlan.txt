@@ -228,6 +228,13 @@ Siguientes features o posibles mejoras futuras
     usarse para spam o abuso (crear N mensajes/salas, escanear la DB).
     Considerar límites por recurso (p. ej. máx. X mensajes/min por usuario)
     además del distribuido de #17.
+    Resuelto: createRateLimiter ahora acepta keyBy (default clientKey/IP).
+    Los POST de mensajes (30/min), salas (10/min) y usuarios (10/min)
+    llevan limiter por usuario (req.user.id, tras requireToken), con
+    windowMs 1 min y 429 al exceder. Los GETs quedan sin limitar por ahora
+    (ya exigen token desde #19b; el escaneo se acota con paginación, #26).
+    Misma limitación en memoria que #7/#17. Tests en test/mensajes.test.js,
+    test/salas.test.js y test/usuarios.test.js (52 en total).
 
 22. Refresh tokens, logout y revocación
     Archivos: controllers/login.js, utils/auth.js
