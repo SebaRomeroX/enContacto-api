@@ -1,0 +1,108 @@
+# Cambios necesarios en el frontend
+
+Documento de cambios en la API de enContacto que pueden romper el
+funcionamiento actual del frontend. Revisar antes de conectar la app.
+
+Contenido del punto 26 del plan (paginación, filtros, GET por id y
+mensajes huérfanos) + recordatorio de lo ya resuelto en puntos
+anteriores (#5, #19, #19b, #25) que sigue vigente.
+
+## 1. GET /api/mensajes ahora es paginado (lo más importante)
+
+Antes devolvía la colección completa. Ahora responde de a **50 por
+página** (por defecto), ordenados de **más nuevo a más antiguo** por
+`date`.
+
+- Parámetros opcionales: `limit` (1-100), `offset` (0+).
+  Ej.: `GET /api/mensajes?limit=50&offset=0`.
+- El total de mensajes (sin paginar) viene en el header
+  `X-Total-Count` (leerlo con `res.headers.get('X-Total-Count')`).
+- Si no se paga `limit`/`offset`, el front **solo verá los últimos 50
+  mensajes**. Para cargar más hay que pedir `offset=50`, `offset=100`,
+  etc.
+
+### Filtros disponibles
+
+| Parámetro | Qué hace                                      | Error si es inválido |
+| --------- | --------------------------------------------- | -------------------- |
+| `salaId`  | Solo mensajes de esa sala.                    | `400`                |
+| `desde`   | Solo mensajes con `date >=` fecha ISO.        | `400`                |
+| `hasta`   | Solo mensajes con `date <=` fecha ISO.        | `400`                |
+
+Ej.: `GET /api/mensajes?salaId=<id>&desde=2026-01-01T00:00:00.000Z&limit=50`.
+
+### Patrón de carga sugerido
+
+- Abrir un chat: pedir `?salaId=<id>&limit=50` → últimos 50.
+- Cargar mensajes anteriores: repetir con `offset` creciente.
+- Mensajes nuevos desde una fecha (polling): `?salaId=<id>&desde=<fecha>`.
+
+## 2. GET /:id en los tres recursos
+
+Nuevos endpoints de detalle (antes no existían):
+
+- `GET /api/mensajes/:id`
+- `GET /api/salas/:id`
+- `GET /api/usuarios/:id`
+
+Responden `200` con el recurso o `404 { "error": "no encontrado" }`.
+`GET /api/usuarios/:id` tampoco expone `contra`.
+
+## 3. Mensajes huérfanos: usuarioId/salaId pueden venir sin resolver
+
+Cuando un usuario es eliminado, **sus mensajes no se borran** y se siguen
+devolviendo. El `usuarioId` de esos mensajes ya no es un objeto poblado:
+queda como **string con el id** (el populate no lo puede resolver).
+
+```json
+{
+  "id": "...",
+  "mensaje": "hola",
+  "usuarioId": "665f...idDelUsuarioBorrado",
+  "salaId": { "id": "...", "nombre": "sala general" },
+  "date": "2026-08-19T..."
+}
+```
+
+El front **no debe asumir** que `usuarioId` siempre es un objeto:
+al renderizar, chequear si es objeto (usar `.nombre`/`.foto`) o string
+(mostrar algo tipo "Usuario eliminado" / nombre por defecto).
+
+## 4. Recordatorio de lo vigente de puntos anteriores
+
+### Todos los endpoints requieren token
+
+Cada petición debe llevar `Authorization: Bearer <token>`; si falta o
+expiró (24 h) responde `401`.
+
+### Roles
+
+Solo `admin` puede eliminar (DELETE → `403` para el resto). No se puede
+crear ni eliminar la cuenta admin. `POST /api/usuarios` solo acepta
+`rol` `"user"`/`"mod"`.
+
+### Populate en GET /api/mensajes
+
+`usuarioId` y `salaId` vienen resueltos como objetos cuando el recurso
+existe (ver punto 3 para el caso de huérfanos).
+
+## 5. Códigos de error a manejar
+
+| Código | Cuándo                          | Acción sugerida                              |
+| ------ | ------------------------------- | -------------------------------------------- |
+| 401    | token faltante/inválido/expirado| Re-loginear al usuario.                      |
+| 403    | sin permiso (no admin)          | Ocultar/deshabilitar acciones de borrado.    |
+| 404    | recurso no existe               | Mostrar "no encontrado".                     |
+| 400    | validación / filtros inválidos  | Mostrar `detalles`.                          |
+| 429    | demasiados intentos (login/POST)| Avisar y esperar.                            |
+
+## 6. Resumen de acciones en el front
+
+- [ ] Paginar `GET /api/mensajes` con `limit`/`offset` y leer el total
+      de `X-Total-Count` (no asumir que llegan todos los mensajes).
+- [ ] Usar `salaId` (y opcionalmente `desde`/`hasta`) para filtrar
+      mensajes por sala en vez de traer todo y filtrar en el cliente.
+- [ ] Manejar `usuarioId`/`salaId` cuando son string (huérfanos) y no
+      solo cuando son objetos poblados.
+- [ ] Opcional: aprovechar `GET /:id` de usuarios, salas y mensajes
+      para pantallas de detalle.

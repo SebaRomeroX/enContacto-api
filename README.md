@@ -36,24 +36,43 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 | Método | Ruta                | Auth                | Body                                | Descripción                                                                                                              |
 | ------ | ------------------- | ------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | GET    | `/api/usuarios`     | Bearer              | —                                   | Lista usuarios (no expone `contra`).                                                                                     |
+| GET    | `/api/usuarios/:id` | Bearer              | —                                   | Detalle de un usuario (no expone `contra`). `404` si no existe.                                                          |
 | POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada mín. 6, nombre único). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
 | DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                                           |
 
 ### Salas
 
-| Método | Ruta             | Auth                | Body      | Descripción   |
-| ------ | ---------------- | ------------------- | --------- | ------------- |
-| GET    | `/api/salas`     | Bearer              | —         | Lista salas.  |
-| POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.    |
-| DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala. |
+| Método | Ruta             | Auth                | Body      | Descripción                              |
+| ------ | ---------------- | ------------------- | --------- | ---------------------------------------- |
+| GET    | `/api/salas`     | Bearer              | —         | Lista salas.                             |
+| GET    | `/api/salas/:id` | Bearer              | —         | Detalle de una sala. `404` si no existe. |
+| POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.                               |
+| DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala.                            |
 
 ### Mensajes
 
-| Método | Ruta                | Auth                | Body                                | Descripción                           |
-| ------ | ------------------- | ------------------- | ----------------------------------- | ------------------------------------- |
-| GET    | `/api/mensajes`     | Bearer              | —                                   | Lista mensajes.                       |
-| POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo). |
-| DELETE | `/api/mensajes/:id` | Bearer (solo admin) | —                                   | Elimina mensaje.                      |
+| Método | Ruta                | Auth                | Body                                | Descripción                                                                                                          |
+| ------ | ------------------- | ------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/mensajes`     | Bearer              | —                                   | Lista mensajes (más nuevos primero, paginado). Filtros: `salaId`, `desde`, `hasta`. Total en header `X-Total-Count`. |
+| GET    | `/api/mensajes/:id` | Bearer              | —                                   | Detalle de un mensaje (con usuario y sala poblados). `404` si no existe.                                             |
+| POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo).                                                                                |
+| DELETE | `/api/mensajes/:id` | Bearer (solo admin) | —                                   | Elimina mensaje.                                                                                                     |
+
+### Paginación y filtros de mensajes
+
+`GET /api/mensajes` acepta query params (todos opcionales):
+
+| Parámetro | Descripción                                                             | Default |
+| --------- | ----------------------------------------------------------------------- | ------- |
+| `salaId`  | Filtra mensajes de una sala (id inválido → `400`).                      | —       |
+| `desde`   | Solo mensajes con `date` >= fecha ISO (fecha inválida → `400`).         | —       |
+| `hasta`   | Solo mensajes con `date` <= fecha ISO (fecha inválida → `400`).         | —       |
+| `limit`   | Cantidad de mensajes por página (entero 1–100; fuera de rango → `400`). | `50`    |
+| `offset`  | Desplazamiento para paginar (entero >= 0).                              | `0`     |
+
+Los resultados vienen ordenados de **más nuevo a más antiguo** por `date`. El total de la consulta (sin paginar) se expone en el header `X-Total-Count`. Ejemplo: `GET /api/mensajes?salaId=<id>&desde=2026-01-01T00:00:00.000Z&limit=50&offset=0`.
+
+Nota: los mensajes con `usuarioId` de un usuario eliminado **se siguen mostrando** (mensajes huérfanos): el populate no los filtra y el campo queda como id sin resolver.
 
 \* obligatorio.
 
@@ -87,7 +106,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 57 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 71 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

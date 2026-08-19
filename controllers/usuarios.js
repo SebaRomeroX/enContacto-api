@@ -22,6 +22,15 @@ usuariosRouter.get('/', requireToken, async (req, res) => {
   res.json(usuarios)
 })
 
+// GET por id
+usuariosRouter.get('/:id', requireToken, async (req, res) => {
+  const usuario = await Usuario.findById(req.params.id)
+  if (!usuario) {
+    return res.status(404).json({ error: 'no encontrado' })
+  }
+  res.json(usuario)
+})
+
 // POST
 usuariosRouter.post('/', requireToken, limiterUsuarios, async (req, res) => {
   const { foto, nombre, contra, rol } = req.body

@@ -1,2 +1,7 @@
-GET http://localhost:3001/api/mensajes/
+# Lista paginada de mensajes (orden: más nuevos primero, default limit=50)
+GET http://localhost:3001/api/mensajes/?limit=50&offset=0
+Authorization: Bearer <token>
+
+### Filtro por sala y desde una fecha
+GET http://localhost:3001/api/mensajes/?salaId=69fd0a4c8fcf50498055e7cf&desde=2026-01-01T00:00:00.000Z&limit=50
 Authorization: Bearer <token>

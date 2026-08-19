@@ -72,6 +72,63 @@ describe('GET /api/usuarios', () => {
   })
 })
 
+describe('GET /api/usuarios/:id', () => {
+  test('responde 200 con token válido y no expone "contra" (#26)', async () => {
+    Usuario.findById = async () =>
+      new Usuario({
+        _id: 'abc',
+        nombre: 'pepe',
+        contra: 'hash-secreto',
+        rol: 'user'
+      })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.nombre, 'pepe')
+      assert.equal(body.contra, undefined)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 404 si no existe (#26)', async () => {
+    Usuario.findById = async () => null
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios/abc123`)
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
 describe('POST /api/usuarios', () => {
   async function postUsuario(body, rol = 'user') {
     const token = jwt.sign(

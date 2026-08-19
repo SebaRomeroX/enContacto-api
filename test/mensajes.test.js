@@ -3,31 +3,53 @@ const assert = require('node:assert/strict')
 const jwt = require('jsonwebtoken')
 
 const Mensaje = require('../models/Mensaje')
+const originalFind = Mensaje.find
+const originalFindById = Mensaje.findById
 const originalFindByIdAndDelete = Mensaje.findByIdAndDelete
+const originalCountDocuments = Mensaje.countDocuments
+const originalSave = Mensaje.prototype.save
 
 const app = require('express')()
 app.use(require('express').json())
 app.use('/api/mensajes', require('../controllers/mensajes'))
+
+function mensajesQueryStub(result) {
+  return {
+    sort() {
+      return this
+    },
+    skip() {
+      return this
+    },
+    limit() {
+      return this
+    },
+    populate() {
+      return this
+    },
+    then(resolve) {
+      resolve(result)
+    }
+  }
+}
 
 beforeEach(() => {
   process.env.TOKEN_KEY = 'test-token-key'
 })
 
 after(async () => {
+  Mensaje.find = originalFind
+  Mensaje.findById = originalFindById
   Mensaje.findByIdAndDelete = originalFindByIdAndDelete
+  Mensaje.countDocuments = originalCountDocuments
+  Mensaje.prototype.save = originalSave
   delete process.env.TOKEN_KEY
 })
 
 describe('GET /api/mensajes', () => {
-  test('responde 200 con token válido (#19b)', async () => {
-    Mensaje.find = () => ({
-      populate() {
-        return this
-      },
-      then(resolve) {
-        resolve([{ _id: 'abc', mensaje: 'hola' }])
-      }
-    })
+  test('responde 200 con token válido y X-Total-Count (#19b/#26)', async () => {
+    Mensaje.countDocuments = async () => 3
+    Mensaje.find = () => mensajesQueryStub([{ _id: 'abc', mensaje: 'hola' }])
     const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
 
     const server = app.listen(0)
@@ -40,6 +62,97 @@ describe('GET /api/mensajes', () => {
       const body = await res.json()
       assert.equal(res.status, 200)
       assert.equal(body[0].mensaje, 'hola')
+      assert.equal(res.headers.get('X-Total-Count'), '3')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con salaId inválido (#26)', async () => {
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes?salaId=no-valido`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('salaId')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con fecha "desde" inválida (#26)', async () => {
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes?desde=no-es-fecha`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('desde')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con "hasta" anterior a "desde" no validado pero fecha inválida (#26)', async () => {
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes?hasta=no-es-fecha`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('hasta')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con limit no numérico (#26)', async () => {
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes?limit=abc`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('limit')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con limit mayor al máximo (#26)', async () => {
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes?limit=101`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('100')))
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }
@@ -51,6 +164,56 @@ describe('GET /api/mensajes', () => {
     try {
       const baseUrl = `http://localhost:${server.address().port}`
       const res = await fetch(`${baseUrl}/api/mensajes`)
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('GET /api/mensajes/:id', () => {
+  test('responde 200 con token válido (#26)', async () => {
+    Mensaje.findById = () => mensajesQueryStub({ _id: 'abc', mensaje: 'hola' })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.mensaje, 'hola')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 404 si no existe (#26)', async () => {
+    Mensaje.findById = () => mensajesQueryStub(null)
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes/abc123`)
       assert.equal(res.status, 401)
     } finally {
       await new Promise((resolve) => server.close(resolve))

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict')
 const jwt = require('jsonwebtoken')
 
 const Sala = require('../models/Sala')
+const originalFindById = Sala.findById
 const originalFindByIdAndDelete = Sala.findByIdAndDelete
 
 const app = require('express')()
@@ -14,6 +15,7 @@ beforeEach(() => {
 })
 
 after(async () => {
+  Sala.findById = originalFindById
   Sala.findByIdAndDelete = originalFindByIdAndDelete
   delete process.env.TOKEN_KEY
 })
@@ -44,6 +46,56 @@ describe('GET /api/salas', () => {
     try {
       const baseUrl = `http://localhost:${server.address().port}`
       const res = await fetch(`${baseUrl}/api/salas`)
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('GET /api/salas/:id', () => {
+  test('responde 200 con token válido (#26)', async () => {
+    Sala.findById = async () => ({ _id: 'abc', nombre: 'sala1' })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.nombre, 'sala1')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 404 si no existe (#26)', async () => {
+    Sala.findById = async () => null
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token (#19b)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`)
       assert.equal(res.status, 401)
     } finally {
       await new Promise((resolve) => server.close(resolve))

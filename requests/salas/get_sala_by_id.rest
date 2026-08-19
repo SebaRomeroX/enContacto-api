@@ -1,0 +1,3 @@
+# Detalle de una sala por id
+GET http://localhost:3001/api/salas/69fd0a4c8fcf50498055e7cf
+Authorization: Bearer <token>

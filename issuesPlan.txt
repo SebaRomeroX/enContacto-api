@@ -284,13 +284,27 @@ Siguientes features o posibles mejoras futuras
     → 400 si no). La validación de existencia al crear el mensaje queda
     para el punto 27.
 
-26. Filtros, GET por id y paginación
-    Archivos: controllers/*.js
+✅ 26. Filtros, GET por id y paginación
+    Archivos: controllers/mensajes.js, controllers/salas.js,
+    controllers/usuarios.js, test/*.test.js, requests/*/get_*.rest,
+    requests/*/get_*_by_id.rest, README.md, cambiosNecesariosFront.txt
     Descripción: Los GET listan todo con find({}) sin paginar, sin filtros
     ni detalle por id. Un chat con muchos mensajes devolverá la colección
     completa. Considerar: ?salaId=, ?usuarioId= y ?desde=<fecha> en
     /api/mensajes, GET /:id en los tres recursos, y paginación
     (limit/offset o cursor por _id/fecha).
+    Resuelto: GET /api/mensajes ahora soporta filtros ?salaId=, ?desde= y
+    ?hasta= (id/fecha inválidos → 400), paginación ?limit=/?offset=
+    (default limit=50, tope 100, 400 si no es entero o excede el tope) y
+    orden desc por date (más nuevos primero), con total sin paginar en el
+    header X-Total-Count. Nuevo GET /:id (200/404) en mensajes, salas y
+    usuarios. Usuarios y salas se dejan SIN paginar (volumen acotado: app
+    de 30-120 personas, <20 salas); solo mensajes crece y necesitaba
+    control. Se descartó el filtro ?usuarioId= (no hacía falta: en un
+    grupo chico se listan mensajes por sala). Los mensajes con usuario
+    eliminado se siguen devolviendo (huérfanos: el populate no los filtra,
+    el campo queda como id sin resolver). Tests ampliados (71 en total).
+    Cambios para el frontend en cambiosNecesariosFront.txt.
 
 27. Política de borrado e integridad referencial
     Archivos: controllers/mensajes.js, controllers/salas.js, controllers/usuarios.js

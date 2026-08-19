@@ -19,6 +19,15 @@ salasRouter.get('/', requireToken, async (req, res) => {
   res.json(salas)
 })
 
+// GET por id
+salasRouter.get('/:id', requireToken, async (req, res) => {
+  const sala = await Sala.findById(req.params.id)
+  if (!sala) {
+    return res.status(404).json({ error: 'no encontrado' })
+  }
+  res.json(sala)
+})
+
 // POST
 salasRouter.post('/', requireToken, limiterSalas, async (req, res) => {
   const { nombre } = req.body
