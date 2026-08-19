@@ -1,6 +1,8 @@
 const { Types } = require('mongoose')
 const mensajesRouter = require('express').Router()
 const Mensaje = require('../models/Mensaje')
+const Usuario = require('../models/Usuario')
+const Sala = require('../models/Sala')
 const {
   validateRequiredStringFields,
   sendValidationError
@@ -111,6 +113,27 @@ mensajesRouter.post('/', requireToken, limiterMensajes, async (req, res) => {
     return sendValidationError(res, validationErrors)
   }
 
+  if (!Types.ObjectId.isValid(usuarioId) || !Types.ObjectId.isValid(salaId)) {
+    return sendValidationError(res, [
+      "los campos 'usuarioId' y 'salaId' deben ser ids válidos"
+    ])
+  }
+
+  const [usuarioExiste, salaExiste] = await Promise.all([
+    Usuario.exists({ _id: usuarioId }),
+    Sala.exists({ _id: salaId })
+  ])
+  if (!usuarioExiste) {
+    return sendValidationError(res, [
+      "el campo 'usuarioId' no corresponde a un usuario existente"
+    ])
+  }
+  if (!salaExiste) {
+    return sendValidationError(res, [
+      "el campo 'salaId' no corresponde a una sala existente"
+    ])
+  }
+
   const newMensaje = new Mensaje({
     mensaje,
     date: new Date(),
@@ -130,7 +153,10 @@ mensajesRouter.delete(
   async (req, res) => {
     const { id } = req.params
 
-    await Mensaje.findByIdAndDelete(id)
+    const deleted = await Mensaje.findByIdAndDelete(id)
+    if (!deleted) {
+      return res.status(404).json({ error: 'no encontrado' })
+    }
     res.status(204).end()
   }
 )

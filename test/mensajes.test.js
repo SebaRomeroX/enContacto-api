@@ -3,11 +3,15 @@ const assert = require('node:assert/strict')
 const jwt = require('jsonwebtoken')
 
 const Mensaje = require('../models/Mensaje')
+const Usuario = require('../models/Usuario')
+const Sala = require('../models/Sala')
 const originalFind = Mensaje.find
 const originalFindById = Mensaje.findById
 const originalFindByIdAndDelete = Mensaje.findByIdAndDelete
 const originalCountDocuments = Mensaje.countDocuments
 const originalSave = Mensaje.prototype.save
+const originalUsuarioExists = Usuario.exists
+const originalSalaExists = Sala.exists
 
 const app = require('express')()
 app.use(require('express').json())
@@ -43,6 +47,8 @@ after(async () => {
   Mensaje.findByIdAndDelete = originalFindByIdAndDelete
   Mensaje.countDocuments = originalCountDocuments
   Mensaje.prototype.save = originalSave
+  Usuario.exists = originalUsuarioExists
+  Sala.exists = originalSalaExists
   delete process.env.TOKEN_KEY
 })
 
@@ -226,6 +232,8 @@ describe('POST /api/mensajes', () => {
     Mensaje.prototype.save = async function () {
       return this
     }
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
     const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
 
     const server = app.listen(0)
@@ -252,10 +260,99 @@ describe('POST /api/mensajes', () => {
     }
   })
 
+  test('responde 400 con usuarioId que no existe (#27)', async () => {
+    Usuario.exists = async () => false
+    Sala.exists = async () => true
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('usuarioId')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con salaId que no existe (#27)', async () => {
+    Usuario.exists = async () => true
+    Sala.exists = async () => false
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('salaId')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 400 con id de usuario o sala malformado (#27)', async () => {
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'no-soy-un-id',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 400)
+      assert.ok(body.detalles.some((d) => d.includes('ids válidos')))
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
   test('responde 429 al exceder el límite de POSTs (#21)', async () => {
     Mensaje.prototype.save = async function () {
       return this
     }
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
     const token = jwt.sign(
       { id: 'rl-user', nombre: 'spammer' },
       process.env.TOKEN_KEY
@@ -313,13 +410,33 @@ describe('DELETE /api/mensajes/:id', () => {
     }
   })
 
+  test('responde 404 si el mensaje no existe (#27)', async () => {
+    Mensaje.findByIdAndDelete = async () => null
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes/abc123`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
   test('responde 403 si el token no es de admin (#19)', async () => {
     Mensaje.findByIdAndDelete = async () => ({})
     const token = jwt.sign(
       { id: 'abc', nombre: 'pepe', rol: 'user' },
       process.env.TOKEN_KEY
     )
-
     const server = app.listen(0)
     await new Promise((resolve) => server.once('listening', resolve))
     try {

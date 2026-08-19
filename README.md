@@ -72,7 +72,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 Los resultados vienen ordenados de **más nuevo a más antiguo** por `date`. El total de la consulta (sin paginar) se expone en el header `X-Total-Count`. Ejemplo: `GET /api/mensajes?salaId=<id>&desde=2026-01-01T00:00:00.000Z&limit=50&offset=0`.
 
-Nota: los mensajes con `usuarioId` de un usuario eliminado **se siguen mostrando** (mensajes huérfanos): el populate no los filtra y el campo queda como id sin resolver.
+Nota: al crear un mensaje, `usuarioId` y `salaId` deben ser ObjectIds válidos de un usuario y una sala existentes (si no, `400`). Los mensajes con `usuarioId` de un usuario **eliminado físicamente** se siguen mostrando: el populate no los resuelve y el campo queda como id sin resolver; el front lo muestra como "eliminado: mensaje". Al borrar una **sala** sus mensajes se borran en cascada (`DELETE /api/salas/:id`).
 
 \* obligatorio.
 

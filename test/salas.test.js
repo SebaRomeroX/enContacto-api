@@ -3,8 +3,10 @@ const assert = require('node:assert/strict')
 const jwt = require('jsonwebtoken')
 
 const Sala = require('../models/Sala')
+const Mensaje = require('../models/Mensaje')
 const originalFindById = Sala.findById
 const originalFindByIdAndDelete = Sala.findByIdAndDelete
+const originalDeleteMany = Mensaje.deleteMany
 
 const app = require('express')()
 app.use(require('express').json())
@@ -17,6 +19,7 @@ beforeEach(() => {
 after(async () => {
   Sala.findById = originalFindById
   Sala.findByIdAndDelete = originalFindByIdAndDelete
+  Mensaje.deleteMany = originalDeleteMany
   delete process.env.TOKEN_KEY
 })
 
@@ -166,8 +169,10 @@ describe('POST /api/salas', () => {
 })
 
 describe('DELETE /api/salas/:id', () => {
-  test('responde 204 por HTTP con token de admin (#19)', async () => {
+  test('responde 204 por HTTP con token de admin y borra sus mensajes (#19/#27)', async () => {
+    Sala.findById = async () => ({ _id: 'abc', nombre: 'sala1' })
     Sala.findByIdAndDelete = async () => ({})
+    Mensaje.deleteMany = async () => ({ deletedCount: 2 })
     const token = jwt.sign(
       { id: 'abc', nombre: 'admin', rol: 'admin' },
       process.env.TOKEN_KEY
@@ -187,7 +192,29 @@ describe('DELETE /api/salas/:id', () => {
     }
   })
 
+  test('responde 404 si la sala no existe (#27)', async () => {
+    Sala.findById = async () => null
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
   test('responde 403 si el token no es de admin (#19)', async () => {
+    Sala.findById = async () => ({ _id: 'abc' })
     Sala.findByIdAndDelete = async () => ({})
     const token = jwt.sign(
       { id: 'abc', nombre: 'pepe', rol: 'user' },
@@ -225,7 +252,9 @@ describe('DELETE /api/salas/:id', () => {
   })
 
   test('envía res.end() una sola vez (regresión del doble 204)', async () => {
+    Sala.findById = async () => ({ _id: 'abc' })
     Sala.findByIdAndDelete = async () => ({})
+    Mensaje.deleteMany = async () => ({ deletedCount: 0 })
 
     const router = require('../controllers/salas')
     const deleteLayer = router.stack.find(

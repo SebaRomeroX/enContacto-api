@@ -1,5 +1,6 @@
 const salasRouter = require('express').Router()
 const Sala = require('../models/Sala')
+const Mensaje = require('../models/Mensaje')
 const {
   validateRequiredStringFields,
   sendValidationError
@@ -53,6 +54,12 @@ salasRouter.delete(
   async (req, res) => {
     const { id } = req.params
 
+    const sala = await Sala.findById(id)
+    if (!sala) {
+      return res.status(404).json({ error: 'no encontrado' })
+    }
+
+    await Mensaje.deleteMany({ salaId: id })
     await Sala.findByIdAndDelete(id)
     res.status(204).end()
   }

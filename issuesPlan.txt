@@ -306,12 +306,24 @@ Siguientes features o posibles mejoras futuras
     el campo queda como id sin resolver). Tests ampliados (71 en total).
     Cambios para el frontend en cambiosNecesariosFront.txt.
 
-27. Política de borrado e integridad referencial
+✅ 27. Política de borrado e integridad referencial
     Archivos: controllers/mensajes.js, controllers/salas.js, controllers/usuarios.js
     Descripción: Borrar una sala o un usuario deja sus mensajes huérfanos,
     y se pueden crear mensajes apuntando a ids inexistentes. Definir una
     política (cascade, bloquear el borrado si tiene mensajes, o soft
     delete) y validar que usuarioId/salaId existan al crear un mensaje.
+    Resuelto: usuarios con borrado FÍSICO (sus mensajes se conservan y el
+    front los muestra como "eliminado: mensaje" cuando el usuarioId no
+    está en la lista); salas con CASCADE delete (DELETE /api/salas/:id
+    borra sus mensajes con deleteMany antes de eliminar la sala, y 404 si
+    no existe); POST /api/mensajes valida que usuarioId/salaId sean
+    ObjectIds válidos y existan (Usuario.exists / Sala.exists → 400 si no),
+    cerrando el pendiente del punto 25; DELETE /api/mensajes/:id ahora da
+    404 si el mensaje no existe. Sin cambios en usuarios/login (el borrado
+    físico     ya impedía el login). Tests ampliados a 76 (stubs de exists y
+    deleteMany, casos 400/404 nuevos).
+    Nota: un token de un usuario eliminado sigue siendo válido hasta
+    expirar (24 h) porque requireToken solo verifica la firma.
 
 28. Timestamps y edición de recursos (PUT/PATCH)
     Archivos: models/*.js, controllers/*.js
