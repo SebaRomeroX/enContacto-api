@@ -1,0 +1,115 @@
+# Cambios necesarios en el frontend
+
+Documento de cambios en la API de enContacto que pueden romper el
+funcionamiento actual del frontend. Revisar antes de conectar la app.
+
+Contenido del punto 27 del plan (política de borrado e integridad
+referencial) + recordatorio de lo vigente de puntos anteriores
+(#5, #19, #19b, #25, #26).
+
+## 1. Borrar una sala AHORA borra sus mensajes en cascada (el cambio más importante)
+
+Antes el front borraba la sala y luego **borraba sus mensajes uno por
+uno** (`DELETE /api/mensajes/:id`). Eso ahora lo hace el backend:
+`DELETE /api/salas/:id` elimina la sala **y todos sus mensajes** en una
+sola llamada.
+
+### Qué hay que cambiar en el front
+
+En `SalasProvider.eliminarSala` (src/context/SalasProvider.tsx), el loop
+que hace `getMensajes({ salaId: id })` + `deleteMensaje(msj.id)` para
+limpiar los mensajes **ya no hace falta**. Hay que eliminarlo: queda
+redundante y hace llamadas innecesarias (la sala ya fue borrada en
+cascada, la búsqueda vuelve vacía).
+
+Lo que sí hay que mantener es la limpieza del estado local:
+- Quitar la sala de la lista local (`salas`).
+- Si era la sala activa, limpiar `salaActiva` y `listaMensajes`
+  (si no, los mensajes de esa sala seguirían renderizándose en memoria,
+  aunque ya no existen en el server).
+
+### Código de error nuevo: `404` en el borrado
+
+`DELETE /api/salas/:id` ahora responde `404` si la sala no existe
+(antes siempre `204`). El front debe tratar el `404` como "ya no existe"
+(ok, es idempotente) y no mostrarlo como error. Ocurre con doble clic en
+"eliminar", una sala borrada desde otra pestaña, o un `salas` desactualizado.
+
+### IMPORTANTE: no intentar re-fetchear los mensajes de la sala borrada
+
+Como los mensajes ya no existen en el server, `GET /api/mensajes?salaId=<idBorrada>`
+vuelve `[]` (con `X-Total-Count: 0`). El front no debe esperar recuperar
+el historial de una sala borrada ni guardarlo como caché reutilizable.
+
+## 2. Crear mensajes: el backend valida que usuarioId y salaId existan
+
+`POST /api/mensajes` ahora rechaza con `400` (detalles en el body):
+- ids malformados (no ObjectId),
+- `usuarioId` que no corresponde a un usuario existente,
+- `salaId` que no corresponde a una sala existente.
+
+El front ya envía ids reales (`usuario.id` del contexto, `salaActiva.id`),
+así que en el flujo normal no cambia nada. Solo a considerar:
+
+- Si la sala activa fue borrada por otro admin, enviar mensaje dará `400`
+  "el campo 'salaId' no corresponde a una sala existente". El front hoy
+  muestra "Error al enviar el mensaje"; idealmente detectaría ese caso
+  y limpiaría la sala activa.
+- No usar ids inventados/placeholder: el `400` de validación ahora es
+  estricto.
+
+## 3. DELETE /api/mensajes/:id ahora responde 404 si no existe
+
+Antes devolvía `204` siempre; ahora `404` si el mensaje ya no está
+(por ejemplo porque su sala fue borrada en cascada). Si el front borra
+mensajes directamente, debe tratar el `404` como "ya estaba borrado".
+En el flujo actual este endpoint deja de usarse para limpiar salas
+(ver punto 1).
+
+## 4. Usuarios: sin cambios (borrado físico, mensajes intactos)
+
+Borrar un usuario sigue eliminándolo por completo; **sus mensajes no se
+tocan**. El `usuarioId` de esos mensajes queda como string sin resolver.
+El front ya lo maneja (Mensaje.tsx muestra "eliminado" cuando el usuario
+no está en la lista). No hay nada que cambiar aquí.
+
+## 5. Recordatorio de lo vigente de puntos anteriores
+
+### Paginación en GET /api/mensajes
+
+Vuelve de a 50 por página (default), más nuevos primero. El total viene
+en el header `X-Total-Count`. El front ya usa `limit`/`offset` y `desde`
+para polling: mantener ese comportamiento.
+
+### Todos los endpoints requieren token (`401`) y solo admin elimina (`403`)
+
+Sin cambios.
+
+### usuarioId/salaId pueden venir sin resolver
+
+Cuando un usuario fue eliminado, `usuarioId` viene como string con el id
+(no objeto poblado). El front no debe asumir que siempre es objeto.
+El caso "sala borrada" ya no genera mensajes huérfanos (se borran en
+cascada), pero el caso "usuario borrado" sigue vigente.
+
+## 6. Códigos de error a manejar
+
+| Código | Cuándo                                     | Acción sugerida                              |
+| ------ | ------------------------------------------ | -------------------------------------------- |
+| 400    | mensaje con ids inexistentes/malformados   | Si es la sala activa, recargar salas.        |
+| 401    | token faltante/inválido/expirado           | Re-loginear al usuario.                      |
+| 403    | sin permiso (no admin)                     | Ocultar acciones de borrado.                 |
+| 404    | recurso no existe (incl. DELETE de sala)   | Tratar como "ya no existe", no como error.   |
+| 429    | demasiados intentos (login/POST)           | Avisar y esperar.                            |
+
+## 7. Resumen de acciones en el front
+
+- [ ] Quitar de `eliminarSala` el loop manual de borrado de mensajes
+      (el backend ya borra en cascada). Mantener la limpieza de estado
+      local (`salas`, `salaActiva`, `listaMensajes`).
+- [ ] Tratar el `404` de `DELETE /api/salas/:id` como "ya estaba borrada"
+      (no mostrarlo como error).
+- [ ] No re-fetchear ni cachear el historial de una sala borrada.
+- [ ] Manejar el `400` de `POST /api/mensajes` si la sala activa dejó de
+      existir (limpiar la sala activa en vez de solo mostrar error).
+- [ ] Mantener el manejo de `usuarioId` como string ("eliminado").
