@@ -325,12 +325,35 @@ Siguientes features o posibles mejoras futuras
     Nota: un token de un usuario eliminado sigue siendo válido hasta
     expirar (24 h) porque requireToken solo verifica la firma.
 
-28. Timestamps y edición de recursos (PUT/PATCH)
+✅ 28. Timestamps y edición de recursos (PUT/PATCH)
     Archivos: models/*.js, controllers/*.js
     Descripción: Solo Mensaje tiene 'date'. Usuarios y salas no tienen
     createdAt/updatedAt. Tampoco hay endpoints para actualizar: perfil
     (nombre, foto, cambio de 'contra' verificando la anterior), nombre de
     sala, etc. Considerar timestamps en el schema y PUT/PATCH por id.
+    Resuelto (parcial): se implementó la edición con PATCH por id; los
+    timestamps se OMITEN a propósito (se agregarán cuando el front los pida,
+    #29). Sin timestamps → los modelos no se tocaron.
+    - PATCH /api/usuarios/:id (controllers/usuarios.js): el propio usuario
+      edita solo 'foto' y 'contra' (exige 'contraActual', verificada con
+      bcrypt.compare → 400 si no coincide; 'contra' mín. 6). 'admin' puede
+      cambiar el 'rol' de OTRO usuario solo a 'user'/'mod' (nunca a 'admin';
+      403 sobre la cuenta admin). 'nombre' NO es modificable por ahora
+      (400 si se envía; podría ser problemático para login/duplicados).
+      Restricciones: un usuario no-admin que edite a otro → 403; admin que
+      envíe foto/contra de un tercero → 400; un usuario que envíe 'rol'
+      propio → 400. 404 si no existe. Rate limit 10/min (#21).
+      Nota: si admin cambia un rol, el JWT del afectado conserva el rol
+      viejo hasta re-login (24 h), igual que en #19.
+    - PATCH /api/salas/:id (controllers/salas.js): solo admin
+      (requireRole('admin')), campo 'nombre' obligatorio, 404 si no existe,
+      rate limit 10/min (#21).
+    - Mensajes: SIN PATCH (inmutables en un chat; el plan solo pedía
+      perfil y nombre de sala).
+    - README actualizado (filas PATCH en Usuarios/Salas, conteo de tests),
+      nuevos requests/usuarios/update_user.rest y
+      requests/salas/update_sala.rest. Tests ampliados a 95 (PATCH de
+      usuarios y salas con stubs).
 
 29. Funcionalidad de mensajería (tiempo real, uploads, salas)
     Archivo: todo el proyecto

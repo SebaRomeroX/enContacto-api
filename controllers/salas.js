@@ -46,6 +46,32 @@ salasRouter.post('/', requireToken, limiterSalas, async (req, res) => {
   res.json(savedSala)
 })
 
+// PATCH
+salasRouter.patch(
+  '/:id',
+  requireToken,
+  requireRole('admin'),
+  limiterSalas,
+  async (req, res) => {
+    const { id } = req.params
+    const { nombre } = req.body
+
+    const validationErrors = validateRequiredStringFields(req.body, ['nombre'])
+    if (validationErrors.length > 0) {
+      return sendValidationError(res, validationErrors)
+    }
+
+    const sala = await Sala.findById(id)
+    if (!sala) {
+      return res.status(404).json({ error: 'no encontrado' })
+    }
+
+    sala.nombre = nombre
+    const updatedSala = await sala.save()
+    res.json(updatedSala)
+  }
+)
+
 // DELETE
 salasRouter.delete(
   '/:id',

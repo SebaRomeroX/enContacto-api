@@ -1,0 +1,7 @@
+PATCH http://localhost:3001/api/salas/<id_sala>
+Content-Type: application/json
+Authorization: Bearer <token_admin>
+
+{
+  "nombre": "sala renombrada"
+}

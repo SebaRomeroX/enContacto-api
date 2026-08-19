@@ -1,0 +1,7 @@
+PATCH http://localhost:3001/api/usuarios/<id_usuario>
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "foto": "1.png"
+}

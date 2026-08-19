@@ -33,12 +33,13 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 
 ### Usuarios
 
-| Método | Ruta                | Auth                | Body                                | Descripción                                                                                                              |
-| ------ | ------------------- | ------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/api/usuarios`     | Bearer              | —                                   | Lista usuarios (no expone `contra`).                                                                                     |
-| GET    | `/api/usuarios/:id` | Bearer              | —                                   | Detalle de un usuario (no expone `contra`). `404` si no existe.                                                          |
-| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol` | Crea usuario (contra hasheada mín. 6, nombre único). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`. |
-| DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                   | Elimina usuario (no al admin).                                                                                           |
+| Método | Ruta                | Auth                | Body                                    | Descripción                                                                                                                                                                                                           |
+| ------ | ------------------- | ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/usuarios`     | Bearer              | —                                       | Lista usuarios (no expone `contra`).                                                                                                                                                                                  |
+| GET    | `/api/usuarios/:id` | Bearer              | —                                       | Detalle de un usuario (no expone `contra`). `404` si no existe.                                                                                                                                                       |
+| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol`     | Crea usuario (contra hasheada mín. 6, nombre único). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`.                                                                                              |
+| PATCH  | `/api/usuarios/:id` | Bearer              | `foto`, `contra`, `contraActual`, `rol` | Edita perfil: el propio usuario solo `foto` y `contra` (exige `contraActual`, que se verifica); `admin` puede cambiar el `rol` de otro (`user`/`mod`, nunca `admin`). `nombre` no es modificable. `404` si no existe. |
+| DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                       | Elimina usuario (no al admin).                                                                                                                                                                                        |
 
 ### Salas
 
@@ -47,6 +48,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 | GET    | `/api/salas`     | Bearer              | —         | Lista salas.                             |
 | GET    | `/api/salas/:id` | Bearer              | —         | Detalle de una sala. `404` si no existe. |
 | POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.                               |
+| PATCH  | `/api/salas/:id` | Bearer (solo admin) | `nombre`* | Renombra una sala. `404` si no existe.   |
 | DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala.                            |
 
 ### Mensajes
@@ -106,7 +108,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 71 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 95 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 

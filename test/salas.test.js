@@ -168,6 +168,91 @@ describe('POST /api/salas', () => {
   })
 })
 
+describe('PATCH /api/salas/:id', () => {
+  async function patchSala(body, rol = 'admin') {
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'pepe', rol },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      })
+      const resBody = await res.json().catch(() => ({}))
+      return { status: res.status, body: resBody }
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  }
+
+  test('admin renombra una sala (#28)', async () => {
+    Sala.findById = async () => ({
+      _id: 'abc123',
+      nombre: 'vieja',
+      save: async function () {
+        return this
+      }
+    })
+    const { status, body } = await patchSala({ nombre: 'nueva' })
+    assert.equal(status, 200)
+    assert.equal(body.nombre, 'nueva')
+  })
+
+  test('responde 400 sin nombre (#28)', async () => {
+    Sala.findById = async () => ({
+      _id: 'abc123',
+      save: async function () {
+        return this
+      }
+    })
+    const { status, body } = await patchSala({})
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('nombre')))
+  })
+
+  test('responde 403 si el token no es de admin (#28)', async () => {
+    Sala.findById = async () => ({
+      _id: 'abc123',
+      save: async function () {
+        return this
+      }
+    })
+    const { status } = await patchSala({ nombre: 'nueva' }, 'user')
+    assert.equal(status, 403)
+  })
+
+  test('responde 404 si la sala no existe (#28)', async () => {
+    Sala.findById = async () => null
+    const { status } = await patchSala({ nombre: 'nueva' })
+    assert.equal(status, 404)
+  })
+
+  test('responde 401 sin token (#28)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: 'nueva' })
+      })
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
 describe('DELETE /api/salas/:id', () => {
   test('responde 204 por HTTP con token de admin y borra sus mensajes (#19/#27)', async () => {
     Sala.findById = async () => ({ _id: 'abc', nombre: 'sala1' })

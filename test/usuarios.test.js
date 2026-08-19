@@ -9,6 +9,7 @@ const originalFindById = Usuario.findById
 const originalFind = Usuario.find
 const originalSave = Usuario.prototype.save
 const originalHash = bcrypt.hash
+const originalCompare = bcrypt.compare
 
 const app = require('express')()
 app.use(require('express').json())
@@ -25,6 +26,7 @@ after(async () => {
   Usuario.find = originalFind
   Usuario.prototype.save = originalSave
   bcrypt.hash = originalHash
+  bcrypt.compare = originalCompare
   delete process.env.TOKEN_KEY
 })
 
@@ -291,6 +293,193 @@ describe('POST /api/usuarios', () => {
 
       const res = await fetch(`${baseUrl}/api/usuarios`, options('otro-user'))
       assert.equal(res.status, 200)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('PATCH /api/usuarios/:id', () => {
+  function stubTarget(overrides = {}) {
+    Usuario.findById = async () => ({
+      _id: 'abc123',
+      nombre: 'pepe',
+      contra: 'hash-viejo',
+      rol: 'user',
+      save: async function () {
+        return this
+      },
+      ...overrides
+    })
+  }
+
+  async function patchUsuario(body, payload) {
+    const token = jwt.sign(payload, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios/abc123`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      })
+      const resBody = await res.json().catch(() => ({}))
+      return { status: res.status, body: resBody }
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  }
+
+  test('el propio usuario actualiza su foto (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { foto: 'nueva.png' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 200)
+    assert.equal(body.foto, 'nueva.png')
+  })
+
+  test('el propio usuario cambia su contra con contraActual correcta (#28)', async () => {
+    stubTarget()
+    bcrypt.compare = async () => true
+    let hashedValue
+    bcrypt.hash = async (value) => {
+      hashedValue = value
+      return 'hash-nuevo'
+    }
+    const { status } = await patchUsuario(
+      { contra: 'nueva123', contraActual: 'vieja' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 200)
+    assert.equal(hashedValue, 'nueva123')
+  })
+
+  test('responde 400 si contraActual no coincide (#28)', async () => {
+    stubTarget()
+    bcrypt.compare = async () => false
+    const { status, body } = await patchUsuario(
+      { contra: 'nueva123', contraActual: 'incorrecta' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('contraActual')))
+  })
+
+  test('responde 400 si la nueva contra tiene menos de 6 caracteres (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { contra: 'corta', contraActual: 'vieja' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('contra')))
+  })
+
+  test('responde 400 si falta contraActual al cambiar contra (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { contra: 'nueva123' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('contraActual')))
+  })
+
+  test('responde 400 si intenta modificar el nombre (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { nombre: 'otro' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('nombre')))
+  })
+
+  test('responde 400 si el propio usuario intenta cambiar su rol (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { rol: 'mod' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('rol')))
+  })
+
+  test('responde 403 si un usuario no-admin edita a otro (#28)', async () => {
+    stubTarget()
+    const { status } = await patchUsuario(
+      { foto: 'x.png' },
+      { id: 'otro', nombre: 'lucas', rol: 'user' }
+    )
+    assert.equal(status, 403)
+  })
+
+  test('admin cambia el rol de un usuario a "mod" (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { rol: 'mod' },
+      { id: 'admin', nombre: 'admin', rol: 'admin' }
+    )
+    assert.equal(status, 200)
+    assert.equal(body.rol, 'mod')
+  })
+
+  test('responde 400 si admin cambia un rol a "admin" (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { rol: 'admin' },
+      { id: 'admin', nombre: 'admin', rol: 'admin' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('rol')))
+  })
+
+  test('responde 403 si admin intenta modificar la cuenta admin (#28)', async () => {
+    stubTarget({ rol: 'admin' })
+    const { status } = await patchUsuario(
+      { rol: 'user' },
+      { id: 'admin', nombre: 'admin', rol: 'admin' }
+    )
+    assert.equal(status, 403)
+  })
+
+  test('responde 400 si admin edita foto/contra de otro usuario (#28)', async () => {
+    stubTarget()
+    const { status, body } = await patchUsuario(
+      { foto: 'x.png' },
+      { id: 'admin', nombre: 'admin', rol: 'admin' }
+    )
+    assert.equal(status, 400)
+    assert.ok(body.detalles.some((d) => d.includes('propio usuario')))
+  })
+
+  test('responde 404 si el usuario no existe (#28)', async () => {
+    Usuario.findById = async () => null
+    const { status } = await patchUsuario(
+      { foto: 'x.png' },
+      { id: 'abc123', nombre: 'pepe', rol: 'user' }
+    )
+    assert.equal(status, 404)
+  })
+
+  test('responde 401 sin token (#28)', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/usuarios/abc123`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ foto: 'x.png' })
+      })
+      assert.equal(res.status, 401)
     } finally {
       await new Promise((resolve) => server.close(resolve))
     }
