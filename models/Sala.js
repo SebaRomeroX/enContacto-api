@@ -1,7 +1,8 @@
 const { model, Schema } = require('mongoose')
 
 const salaSchema = new Schema({
-  nombre: String
+  nombre: String,
+  listaMiembros: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }]
 })
 
 salaSchema.set('toJSON', {

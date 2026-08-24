@@ -77,6 +77,19 @@ mensajesRouter.get('/', requireToken, async (req, res) => {
     return sendValidationError(res, [pagination.error])
   }
 
+  if (parsedQuery.filter.salaId && req.user.rol !== 'admin') {
+    const sala = await Sala.findById(parsedQuery.filter.salaId)
+    if (!sala) {
+      return res.status(404).json({ error: 'no encontrado' })
+    }
+    const isMember = sala.listaMiembros.some(
+      (id) => id.toString() === req.user.id
+    )
+    if (!isMember) {
+      return res.status(403).json({ error: 'no eres miembro de esta sala' })
+    }
+  }
+
   const total = await Mensaje.countDocuments(parsedQuery.filter)
   const mensajes = await Mensaje.find(parsedQuery.filter)
     .sort({ date: -1 })
@@ -132,6 +145,16 @@ mensajesRouter.post('/', requireToken, limiterMensajes, async (req, res) => {
     return sendValidationError(res, [
       "el campo 'salaId' no corresponde a una sala existente"
     ])
+  }
+
+  if (req.user.rol !== 'admin') {
+    const sala = await Sala.findById(salaId)
+    const isMember = sala.listaMiembros.some(
+      (id) => id.toString() === req.user.id
+    )
+    if (!isMember) {
+      return res.status(403).json({ error: 'no eres miembro de esta sala' })
+    }
   }
 
   const newMensaje = new Mensaje({

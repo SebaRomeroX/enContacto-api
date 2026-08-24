@@ -28,4 +28,27 @@ function requireRole(...roles) {
   }
 }
 
-module.exports = { requireToken, requireRole }
+async function requireSalaAccess(req, res, next) {
+  const Sala = require('../models/Sala')
+  const sala = await Sala.findById(req.params.id)
+  if (!sala) {
+    return res.status(404).json({ error: 'no encontrado' })
+  }
+
+  if (req.user.rol === 'admin') {
+    req.sala = sala
+    return next()
+  }
+
+  const isMember = sala.listaMiembros.some(
+    (id) => id.toString() === req.user.id
+  )
+  if (!isMember) {
+    return res.status(403).json({ error: 'no eres miembro de esta sala' })
+  }
+
+  req.sala = sala
+  next()
+}
+
+module.exports = { requireToken, requireRole, requireSalaAccess }

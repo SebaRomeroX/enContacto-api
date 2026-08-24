@@ -12,6 +12,7 @@ const originalCountDocuments = Mensaje.countDocuments
 const originalSave = Mensaje.prototype.save
 const originalUsuarioExists = Usuario.exists
 const originalSalaExists = Sala.exists
+const originalSalaFindById = Sala.findById
 
 const app = require('express')()
 app.use(require('express').json())
@@ -49,6 +50,7 @@ after(async () => {
   Mensaje.prototype.save = originalSave
   Usuario.exists = originalUsuarioExists
   Sala.exists = originalSalaExists
+  Sala.findById = originalSalaFindById
   delete process.env.TOKEN_KEY
 })
 
@@ -234,6 +236,9 @@ describe('POST /api/mensajes', () => {
     }
     Usuario.exists = async () => true
     Sala.exists = async () => true
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'abc' }]
+    })
     const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
 
     const server = app.listen(0)
@@ -353,8 +358,11 @@ describe('POST /api/mensajes', () => {
     }
     Usuario.exists = async () => true
     Sala.exists = async () => true
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'aaaaaaaaaaaaaaaaaaaaaaaa' }]
+    })
     const token = jwt.sign(
-      { id: 'rl-user', nombre: 'spammer' },
+      { id: 'aaaaaaaaaaaaaaaaaaaaaaaa', nombre: 'spammer' },
       process.env.TOKEN_KEY
     )
 
@@ -491,5 +499,155 @@ describe('DELETE /api/mensajes/:id', () => {
     await new Promise((resolve) => setImmediate(resolve))
 
     assert.equal(res.ends, 1)
+  })
+})
+
+describe('POST /api/mensajes - control de membresía', () => {
+  test('miembro puede publicar (#mm1)', async () => {
+    Mensaje.prototype.save = async function () {
+      return this
+    }
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'abc' }]
+    })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.mensaje, 'hola')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('no miembro recibe 403 (#mm1)', async () => {
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'other-user' }]
+    })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      assert.equal(res.status, 403)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('admin puede publicar en cualquier sala (#mm1)', async () => {
+    Mensaje.prototype.save = async function () {
+      return this
+    }
+    Usuario.exists = async () => true
+    Sala.exists = async () => true
+    const token = jwt.sign(
+      { id: '111111111111111111111111', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/mensajes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          mensaje: 'hola',
+          usuarioId: '111111111111111111111111',
+          salaId: 'bbbbbbbbbbbbbbbbbbbbbbbb'
+        })
+      })
+      const body = await res.json()
+      assert.equal(res.status, 200)
+      assert.equal(body.mensaje, 'hola')
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
+describe('GET /api/mensajes - control de membresía por salaId', () => {
+  test('no miembro recibe 403 al filtrar por salaId (#mm2)', async () => {
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'other-user' }]
+    })
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(
+        `${baseUrl}/api/mensajes?salaId=bbbbbbbbbbbbbbbbbbbbbbbb`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      assert.equal(res.status, 403)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('miembro puede filtrar por salaId (#mm2)', async () => {
+    Sala.findById = async () => ({
+      listaMiembros: [{ toString: () => 'abc' }]
+    })
+    Mensaje.countDocuments = async () => 0
+    Mensaje.find = () => mensajesQueryStub([])
+    const token = jwt.sign({ id: 'abc', nombre: 'pepe' }, process.env.TOKEN_KEY)
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(
+        `${baseUrl}/api/mensajes?salaId=bbbbbbbbbbbbbbbbbbbbbbbb`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      assert.equal(res.status, 200)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
   })
 })
