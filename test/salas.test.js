@@ -371,6 +371,86 @@ describe('DELETE /api/salas/:id', () => {
   })
 })
 
+describe('DELETE /api/salas/:id/mensajes - vaciar sala', () => {
+  test('admin vacía sala, borra mensajes pero conserva la sala', async () => {
+    Sala.findById = async () => ({ _id: 'abc', nombre: 'sala1' })
+    Mensaje.deleteMany = async () => ({ deletedCount: 5 })
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123/mensajes`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 204)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 404 si la sala no existe', async () => {
+    Sala.findById = async () => null
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'admin', rol: 'admin' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123/mensajes`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 404)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 403 si el token no es de admin', async () => {
+    Sala.findById = async () => ({ _id: 'abc', nombre: 'sala1' })
+    const token = jwt.sign(
+      { id: 'abc', nombre: 'pepe', rol: 'user' },
+      process.env.TOKEN_KEY
+    )
+
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123/mensajes`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      assert.equal(res.status, 403)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+
+  test('responde 401 sin token', async () => {
+    const server = app.listen(0)
+    await new Promise((resolve) => server.once('listening', resolve))
+    try {
+      const baseUrl = `http://localhost:${server.address().port}`
+      const res = await fetch(`${baseUrl}/api/salas/abc123/mensajes`, {
+        method: 'DELETE'
+      })
+      assert.equal(res.status, 401)
+    } finally {
+      await new Promise((resolve) => server.close(resolve))
+    }
+  })
+})
+
 describe('GET /api/salas - filtrado por membresía', () => {
   test('admin ve todas las salas (#m1)', async () => {
     Sala.find = async () => [

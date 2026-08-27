@@ -156,6 +156,25 @@ salasRouter.delete(
   }
 )
 
+// DELETE /:id/mensajes - vaciar sala
+salasRouter.delete(
+  '/:id/mensajes',
+  requireToken,
+  requireRole('admin'),
+  limiterSalas,
+  async (req, res) => {
+    const { id } = req.params
+
+    const sala = await Sala.findById(id)
+    if (!sala) {
+      return res.status(404).json({ error: 'no encontrado' })
+    }
+
+    await Mensaje.deleteMany({ salaId: id })
+    res.status(204).end()
+  }
+)
+
 // DELETE
 salasRouter.delete(
   '/:id',

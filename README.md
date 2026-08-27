@@ -49,6 +49,7 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 | GET    | `/api/salas/:id` | Bearer              | —         | Detalle de una sala. `404` si no existe. |
 | POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.                               |
 | PATCH  | `/api/salas/:id` | Bearer (solo admin) | `nombre`* | Renombra una sala. `404` si no existe.   |
+| DELETE | `/api/salas/:id/mensajes` | Bearer (solo admin) | —         | Vacía sala: borra todos sus mensajes. `404` si no existe. |
 | DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala.                            |
 
 ### Mensajes
