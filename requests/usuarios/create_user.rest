@@ -2,8 +2,5 @@ POST http://localhost:3001/api/usuarios/
 Content-Type: application/json
 
 {
-  "foto": "0.png",
-  "nombre": "Administrador",
-  "contra": "333",
-  "rol": "admin"
+  "nombre": "NombreUsuario"
 }

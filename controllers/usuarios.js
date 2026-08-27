@@ -8,8 +8,6 @@ const {
 const { requireToken, requireRole } = require('../utils/auth')
 const { createRateLimiter } = require('../utils/rateLimit')
 
-const ROLES_PERMITIDOS_CREACION = ['user', 'mod']
-
 const limiterUsuarios = createRateLimiter({
   windowMs: 60 * 1000,
   max: 10,
@@ -33,38 +31,30 @@ usuariosRouter.get('/:id', requireToken, async (req, res) => {
 
 // POST
 usuariosRouter.post('/', requireToken, limiterUsuarios, async (req, res) => {
-  const { foto, nombre, contra, rol } = req.body
+  const { nombre } = req.body
 
-  const validationErrors = validateRequiredStringFields(req.body, [
-    'nombre',
-    'contra'
-  ])
-  if (typeof contra === 'string' && contra.trim().length < 6) {
-    validationErrors.push("campo 'contra' debe tener al menos 6 caracteres")
-  }
-  if (rol === 'admin') {
-    validationErrors.push(
-      `campo 'rol' no puede ser 'admin' (solo puede existir una cuenta admin)`
-    )
-  } else if (
-    rol !== undefined &&
-    rol !== null &&
-    !ROLES_PERMITIDOS_CREACION.includes(rol)
-  ) {
-    validationErrors.push(
-      `campo 'rol' debe ser uno de: ${ROLES_PERMITIDOS_CREACION.join(', ')}`
-    )
-  }
+  const validationErrors = validateRequiredStringFields(req.body, ['nombre'])
   if (validationErrors.length > 0) {
     return sendValidationError(res, validationErrors)
   }
 
-  const passwordHash = await bcrypt.hash(contra, 10)
+  const existingUser = await Usuario.findOne({ nombre })
+  if (existingUser) {
+    return res.status(400).json({
+      error: 'solicitud inválida',
+      detalles: ["el campo 'nombre' ya está en uso"]
+    })
+  }
+
+  const defaultPassword = '777'
+  const defaultFoto = 'no-foto.png'
+  const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
   const newUsuario = new Usuario({
-    foto,
     nombre,
     contra: passwordHash,
-    rol: rol || 'user'
+    foto: defaultFoto,
+    rol: 'user'
   })
 
   const savedUsuario = await newUsuario.save()
