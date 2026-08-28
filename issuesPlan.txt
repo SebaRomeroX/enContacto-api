@@ -352,8 +352,43 @@ Siguientes features o posibles mejoras futuras
       perfil y nombre de sala).
     - README actualizado (filas PATCH en Usuarios/Salas, conteo de tests),
       nuevos requests/usuarios/update_user.rest y
-      requests/salas/update_sala.rest. Tests ampliados a 95 (PATCH de
+      requests/salas/update_sala.rest. Tests ampliados a 117 (PATCH de
       usuarios y salas con stubs).
+
+✅ 37. Simplificación de creación de usuarios
+     Archivo: controllers/usuarios.js, requests/usuarios/create_user.rest
+     Descripción: POST /api/usuarios ahora solo requiere 'nombre'. Se asignan
+     defaults automáticamente: contra = '777' (hasheada), foto = 'no-foto.png',
+     rol = 'user'. Ya no se envía contra/foto/rol en el body. Simplifica la
+     administración: un admin crea un usuario y este cambia su contraseña al
+     primer login (cuando exista endpoint de cambio forzado, o manualmente
+     vía PATCH).
+     Resuelto: controllers/usuarios.js simplificado, create_user.rest actualizado.
+
+✅ 38. Membresía de salas (listaMiembros + control de acceso)
+     Archivos: models/Sala.js, controllers/salas.js, controllers/mensajes.js,
+     utils/auth.js, test/salas.test.js, test/mensajes.test.js
+     Descripción: Las salas no tenían relación real con usuarios. Se agregó
+     campo 'listaMiembros' (array de ObjectId ref a Usuario) en Sala. El
+     creador se agrega automáticamente al crear una sala. Endpoints nuevos:
+     POST /api/salas/:id/miembros (admin agrega miembros, body { usuarioIds }),
+     DELETE /api/salas/:id/miembros/:usuarioId (admin elimina miembro).
+     GET /api/salas filtra por membresía (admin ve todas).
+     GET /api/salas/:id requiere membresía (middleware requireSalaAccess).
+     POST /api/mensajes valida que el usuario sea miembro de la sala (403 si no).
+     GET /api/mensajes con ?salaId= también valida membresía (403 si no).
+     Admin bypasea todas las verificaciones de membresía.
+     Resuelto: Sala.js con listaMiembros, auth.js con requireSalaAccess,
+     salas.js con endpoints de miembros, mensajes.js con validación.
+     Tests ampliados a 117 total.
+
+✅ 39. DELETE /api/salas/:id/mensajes (vaciar sala)
+     Archivo: controllers/salas.js, test/salas.test.js
+     Descripción: Endpoint para borrar todos los mensajes de una sala sin
+     eliminar la sala misma. Solo admin. Devuelve 204 sin contenido, 404 si
+     la sala no existe.
+     Resuelto: controllers/salas.js, documentado en README. Tests en
+     test/salas.test.js.
 
 29. Funcionalidad de mensajería (tiempo real, uploads, salas)
     Archivo: todo el proyecto

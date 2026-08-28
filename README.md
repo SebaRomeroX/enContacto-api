@@ -37,28 +37,34 @@ Hay tres roles (`admin`, `user`, `mod`). Solo puede existir una cuenta `admin` (
 | ------ | ------------------- | ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/api/usuarios`     | Bearer              | —                                       | Lista usuarios (no expone `contra`).                                                                                                                                                                                  |
 | GET    | `/api/usuarios/:id` | Bearer              | —                                       | Detalle de un usuario (no expone `contra`). `404` si no existe.                                                                                                                                                       |
-| POST   | `/api/usuarios`     | Bearer              | `foto`, `nombre`_, `contra`_, `rol`     | Crea usuario (contra hasheada mín. 6, nombre único). `rol` solo `user`/`mod`, default `user`; no se puede crear `admin`.                                                                                              |
+| POST   | `/api/usuarios`     | Bearer              | `nombre`_                            | Crea usuario con defaults: contra `777` (hasheada), foto `no-foto.png`, rol `user`. Nombre único.                                                                                                                       |
 | PATCH  | `/api/usuarios/:id` | Bearer              | `foto`, `contra`, `contraActual`, `rol` | Edita perfil: el propio usuario solo `foto` y `contra` (exige `contraActual`, que se verifica); `admin` puede cambiar el `rol` de otro (`user`/`mod`, nunca `admin`). `nombre` no es modificable. `404` si no existe. |
 | DELETE | `/api/usuarios/:id` | Bearer (solo admin) | —                                       | Elimina usuario (no al admin).                                                                                                                                                                                        |
 
 ### Salas
 
-| Método | Ruta             | Auth                | Body      | Descripción                              |
-| ------ | ---------------- | ------------------- | --------- | ---------------------------------------- |
-| GET    | `/api/salas`     | Bearer              | —         | Lista salas.                             |
-| GET    | `/api/salas/:id` | Bearer              | —         | Detalle de una sala. `404` si no existe. |
-| POST   | `/api/salas`     | Bearer              | `nombre`* | Crea sala.                               |
-| PATCH  | `/api/salas/:id` | Bearer (solo admin) | `nombre`* | Renombra una sala. `404` si no existe.   |
-| DELETE | `/api/salas/:id/mensajes` | Bearer (solo admin) | —         | Vacía sala: borra todos sus mensajes. `404` si no existe. |
-| DELETE | `/api/salas/:id` | Bearer (solo admin) | —         | Elimina sala.                            |
+Las salas tienen un campo `listaMiembros` (array de ids de usuario). El creador se agrega automáticamente. `admin` ve todas las salas; otros usuarios solo ven las que son miembros.
+
+| Método | Ruta                             | Auth                | Body                        | Descripción                                                                                                   |
+| ------ | -------------------------------- | ------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/salas`                     | Bearer              | —                           | Lista salas (admin: todas; otros: solo donde es miembro).                                                     |
+| GET    | `/api/salas/:id`                 | Bearer              | —                           | Detalle de una sala. Requiere membresía (admin bypasea). `404` si no existe, `403` si no es miembro.          |
+| POST   | `/api/salas`                     | Bearer              | `nombre`_, `listaMiembros`  | Crea sala. Opcionalmente agrega ids iniciales de miembros; el creador siempre se incluye.                     |
+| PATCH  | `/api/salas/:id`                 | Bearer (solo admin) | `nombre`_                   | Renombra una sala. `404` si no existe.                                                                        |
+| POST   | `/api/salas/:id/miembros`        | Bearer (solo admin) | `usuarioIds`_ (array de ids)| Agrega miembros a la sala.                                                                                    |
+| DELETE | `/api/salas/:id/miembros/:uid`   | Bearer (solo admin) | —                           | Elimina un miembro de la sala.                                                                                |
+| DELETE | `/api/salas/:id/mensajes`        | Bearer (solo admin) | —                           | Vacía sala: borra todos sus mensajes. `404` si no existe.                                                     |
+| DELETE | `/api/salas/:id`                 | Bearer (solo admin) | —                           | Elimina sala y sus mensajes (cascade).                                                                        |
 
 ### Mensajes
 
+Para crear un mensaje o filtrar por `salaId`, el usuario debe ser miembro de la sala (`admin` bypasea esta restricción).
+
 | Método | Ruta                | Auth                | Body                                | Descripción                                                                                                          |
 | ------ | ------------------- | ------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/mensajes`     | Bearer              | —                                   | Lista mensajes (más nuevos primero, paginado). Filtros: `salaId`, `desde`, `hasta`. Total en header `X-Total-Count`. |
+| GET    | `/api/mensajes`     | Bearer              | —                                   | Lista mensajes (más nuevos primero, paginado). Filtros: `salaId`, `desde`, `hasta`. Si `salaId`, requiere membresía. Total en header `X-Total-Count`. |
 | GET    | `/api/mensajes/:id` | Bearer              | —                                   | Detalle de un mensaje (con usuario y sala poblados). `404` si no existe.                                             |
-| POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje (`date` se asigna solo).                                                                                |
+| POST   | `/api/mensajes`     | Bearer              | `mensaje`_, `usuarioId`_, `salaId`* | Crea mensaje. Requiere membresía en la sala. `date` se asigna solo.                                                  |
 | DELETE | `/api/mensajes/:id` | Bearer (solo admin) | —                                   | Elimina mensaje.                                                                                                     |
 
 ### Paginación y filtros de mensajes
@@ -98,7 +104,7 @@ Respuestas JSON con `{ error, detalles? }`:
 
 - `400` — solicitud inválida (validación de campos, nombre duplicado, id inválido, JSON malformado)
 - `401` — token o credenciales inválidos
-- `403` — sin permiso (rol insuficiente, p. ej. borrar sin ser admin o borrar la cuenta admin)
+- `403` — sin permiso (rol insuficiente, p. ej. borrar sin ser admin o borrar la cuenta admin; no es miembro de la sala)
 - `404` — recurso no encontrado
 - `429` — demasiados intentos (rate limit de login)
 - `500` — error interno del servidor
@@ -109,7 +115,7 @@ Respuestas JSON con `{ error, detalles? }`:
 pnpm test
 ```
 
-Usa el runner nativo de Node (`node:test`), 95 tests, sin dependencias extra.
+Usa el runner nativo de Node (`node:test`), 117 tests, sin dependencias extra.
 
 ## Deploy en Vercel
 
